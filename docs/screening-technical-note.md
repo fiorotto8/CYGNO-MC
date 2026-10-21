@@ -3,6 +3,12 @@
 21 October 2026. Branch: `g4v11.3_cygno04_screening`.
 Base: `g4v11.3_cygno04`, commit `3f53d24ce433e304dd86f31ef9c5f16cefd50ee1`.
 
+PDFs in this directory: [technical note](cygno04_screening_technical_note.pdf)
+and [detailed original/screening/TRIM performance comparison](cygno_mc_trim_comparison.pdf).
+The latter uses the final implemented candidate and supersedes the earlier
+development report of the same name; compact-output results are identified
+separately from the full ROOT schema retained by this branch.
+
 ## Purpose and qualified scope
 
 This branch installs the selected ZBL screened transport and its frozen TRIM
