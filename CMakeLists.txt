@@ -35,6 +35,9 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 # Add the executable, and link it to the Geant4 libraries
 #
 add_executable(CYGNO CYGNO.cc ${sources} ${headers})
+target_sources(CYGNO PRIVATE external/TestEm7/G4ScreenedNuclearRecoil.cc
+                             external/TestEm7/G4LindhardPartition.cc)
+target_include_directories(CYGNO PRIVATE ${PROJECT_SOURCE_DIR}/external/TestEm7)
 target_link_libraries(CYGNO ${Geant4_LIBRARIES})
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we

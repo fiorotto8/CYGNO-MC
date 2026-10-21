@@ -77,6 +77,9 @@
 #include "G4OpWLS.hh"
 #include "G4OpticalPhoton.hh"
 #include "G4PhysicsListHelper.hh"
+#include "G4ScreenedNuclearRecoil.hh"
+#include "G4UrbanMscModel.hh"
+#include "G4EmProcessSubType.hh"
 /*
 #include "MyCerenkov.hh"
 #include "MyOpWLS.hh"
@@ -287,6 +290,37 @@ void CYGNOPhysicsList::ConstructProcess()
   AddDecay();  
 */
   G4VModularPhysicsList::ConstructProcess();
+  // Explicit screened elastic recoils replace continuous nuclear stopping and
+  // low-energy ion scattering. Keep option4 electronic ionisation unchanged.
+  auto* screened = new G4ScreenedNuclearRecoil(
+      "ScreenedElastic", "zbl", true, 1.*eV, 0.1*eV);
+  screened->SetMaxEnergyForScattering(100.*MeV);
+  auto* ions = GetParticleIterator();
+  ions->reset();
+  while ((*ions)()) {
+    auto* particle = ions->value();
+    const auto& name = particle->GetParticleName();
+    if (name != "GenericIon" && name != "alpha" && name != "He3" &&
+        name != "proton" && name != "deuteron" && name != "triton") continue;
+    auto* manager = particle->GetProcessManager();
+    auto* processes = manager->GetProcessList();
+    for (G4int i = processes->size()-1; i >= 0; --i) {
+      auto* process = (*processes)[i];
+      if (process->GetProcessName() == "nuclearStopping" ||
+          process->GetProcessSubType() == fMultipleScattering ||
+          process->GetProcessSubType() == fCoulombScattering)
+        manager->RemoveProcess(process);
+    }
+    auto* msc = new G4hMultipleScattering();
+    auto* model = new G4UrbanMscModel();
+    model->SetActivationLowEnergyLimit(100.*MeV);
+    msc->SetEmModel(model);
+    auto* helper = G4PhysicsListHelper::GetPhysicsListHelper();
+    if (!helper->RegisterProcess(msc, particle) ||
+        !helper->RegisterProcess(screened, particle))
+      G4Exception("CYGNOPhysicsList::ConstructProcess", "ScreeningRegistration",
+                  FatalException, "Cannot register screened ion processes");
+  }
   AddStepMax();
   //ConstructOp();
 }
