@@ -1,243 +1,217 @@
-# Minimal screened nuclear-recoil branch
+# Screened NR transport within the existing ROOT budget
 
-21 October 2026. Branch: `g4v11.3_cygno04_screening`.
-Base: `g4v11.3_cygno04`, commit `3f53d24ce433e304dd86f31ef9c5f16cefd50ee1`.
+Branch: `g4v11.3_cygno04_screening`, 21 October 2026.
+Original control: `g4v11.3_cygno04`, commit `3f53d24ce433e304dd86f31ef9c5f16cefd50ee1`.
+All builds/runs reported here used **Geant4 11.4.0 and ROOT 6.36.08 under WSL**.
+The historical branch name does not establish a tested Geant4 11.3 build.
 
-PDFs in this directory: [technical note](cygno04_screening_technical_note.pdf)
-and [detailed original/screening/TRIM performance comparison](cygno_mc_trim_comparison.pdf).
-The latter uses the final implemented candidate and supersedes the earlier
-development report of the same name; compact-output results are identified
-separately from the full ROOT schema retained by this branch.
+[Technical PDF](cygno04_screening_technical_note.pdf),
+[detailed comparison PDF](cygno_mc_trim_comparison.pdf) and
+[comparison CSV](screening-comparison.csv) describe the current implementation.
+They supersede the earlier fully tracked screening results for this branch.
 
-## Purpose and qualified scope
+## Required output contract
 
-This branch installs the selected ZBL screened transport and its frozen TRIM
-mean-response calibration in the application. It changes three existing files
-(44 added lines), adds one response header, and vendors the seven necessary
-TestEm7 implementation/header files plus their license and attribution. It does
-not import the development physics lists, scan switches or diagnostic actions.
-The branch name follows the existing naming convention: the build and numerical
-qualification reported here use **Geant4 11.4.0 and ROOT 6.36.08 under WSL**.
-Compilation and transport under Geant4 11.3 have not been demonstrated.
+**The original ROOT format is preserved, with one hit per native depositing
+Geant4 step.** Branch names, types, units and vector alignment match the original.
+There is no aggregation, packing, quantization, hit thinning or new reader.
+The ROOT writer, sensitive detector, event action and primary generator are
+identical to the original branch. `numhits` still counts native depositing
+steps. Raw energies are never rescaled to enforce quenching.
 
-The qualified sample is single H1, He4, C12, O16 or F19 primaries, total kinetic
-energy 0.25-1000 keV, isotropic at (0,0,245) mm, in the existing 900 mbar,
-293.15 K He/CF4 detector gas. Geometry, composition, electronic stopping,
-production cuts, source macros, energy-dependent step caps and 25 eV charged
-tracking threshold are unchanged. Calibration coefficients are specific to
-this configuration. Range and direction improve substantially on average;
-high-energy heavy-ion ranges remain too short. This is agreement with a TRIM
-simulation reference, not a validation against measured detector charge.
+The target is 10 decimal GB per ion per million events of the existing
+0.25-1000 keV log-uniform NR source. The earlier fully tracked screening
+prototype required approximately 37-572 GB/million in this format. That is
+not the model now installed. The rejected compact-output implementation is
+absent from this branch.
 
-## What changes in the nuclear-recoil physics
+## Physics model and compromise
 
-The original branch constructs `G4EmStandardPhysics_option4`. It combines
-electronic ionisation, condensed scattering and continuous nuclear stopping.
-The new branch first constructs the same physics, then replaces the nuclear
-transport processes on GenericIon, alpha, He3, proton, deuteron and triton.
-Dynamic heavy ions inherit the GenericIon process configuration.
+Option4 electronic ionisation and the existing electromagnetic, decay and
+hadronic constructors remain. On GenericIon, alpha, He3, proton, deuteron and
+triton, continuous `nuclearStopping` and original low-energy multiple/Coulomb
+scattering are replaced by TestEm7 ZBL screened elastic scattering.
 
-| Component | Original branch | Screening branch |
-|---|---|---|
-| Electronic ionisation / option4 settings | Existing option4 | Unchanged |
-| Continuous `nuclearStopping` | Present | Removed on the ion species above |
-| Low-energy multiple/Coulomb scattering | Existing option4 processes | Removed and replaced by screened elastic collisions |
-| Nuclear elastic interaction | Original treatment | TestEm7 `G4ScreenedNuclearRecoil`, ZBL potential, explicit secondary recoils |
-| Transfer/physics cutoff | Not the same parameterisation | 0.1 eV, supplied in constructor |
-| Recoil/terminal cutoff | Existing transport settings | TestEm7 1 eV/u, in addition to unchanged 25 eV tracking threshold |
-| Higher-energy scattering | Existing option4 | Urban MSC activation at 100 MeV total; screened maximum 100 MeV/u |
-| Local custom QF | Existing TRIM response derivative | Same local prescription, followed by bounded event correction |
+For affordability, **target recoil energy is deposited locally using TestEm7's
+native local-deposition treatment; explicit target-recoil cascade tracks are
+disabled**. Projectile energy loss and deflection are still simulated by
+screened collisions. This is a primary-ion transport approximation, not the
+earlier fully tracked cascade. Secondary electrons and secondaries from other
+registered processes are not globally disabled.
 
-Explicit target recoils carry energy and direction into a cascade instead of
-representing their transfer only through continuous nuclear stopping. Removing
-the old nuclear stopping and scattering avoids overlapping low-energy nuclear
-treatments. Electron, photon, decay and hadronic constructors are unchanged.
-This is a hybrid with option4 ionisation; it is not wholesale replacement by
-the TestEm7 example physics list.
+TestEm7's default `G4LindhardRobinsonPartition` splits the local recoil deposit
+between electronic loss and NIEL. The stored native Geant4 energy channels
+therefore remain separate from CYGNO's custom TRIM response below.
 
-The 100 MeV thresholds reproduce the tested prototype exactly. Geant4's Urban
-activation and TestEm7 maximum use different energy conventions, so these
-settings must not be interpreted as a validated high-energy handoff. All
-reported tests are at or below 1 MeV total. Behaviour at higher energies and
-background sources requires separate qualification.
-
-Two small upstream fixes are included in the vendored screened source:
-
-1. Scattering quadrature can request a potential outside the native finite
-   interpolation domain. Above that domain the code evaluates the same ZBL
-   analytic function, with coefficients 0.1818, 0.5099, 0.2802 and 0.0281 and
-   exponents 3.2, 0.9432, 0.4028 and 0.2016 in reduced radius. In-domain
-   interpolation is unchanged. This is a numerical continuation, not fitted
-   screening strength. It supports this branch's ZBL configuration only.
-2. `PostStepDoIt` now uses the same low-energy terminal condition as
-   `GetMeanFreePath`, avoiding a collision-handler access after the latter
-   selected a terminal step. Supplying the actual physics cutoff in the
-   constructor also avoids the upstream setter leaving its initial low-energy
-   limit stale.
-
-## Quenching: what is fitted and what is preserved
-
-The original hit prescription is retained: for response R(E)=E QF_TRIM(E),
-apply dR/dE to nuclear deposits above 25 eV; use the existing low-energy
-prescription below that threshold. The original hard-coded TRIM models are
-unchanged. This local weighting does not automatically reproduce the TRIM
-whole-event electronic fraction once explicit recoil cascades are generated.
-
-For a qualified single-ion event let E0 be the actual generated primary kinetic
-energy in keV, and S the sum of custom response weights in keV. Define:
+The cross-section/mean-free-path tables use an energy-dependent transfer
+resolution parameter, with E the total projectile kinetic energy:
 
 ```
-f = S/E0
-f_corrected = 1 - (1-f)^alpha_species(E0)
-gain = f_corrected/f
+Tcut(E) = min(100 eV, max(0.1 eV, 0.001 * E))
 ```
 
-The implementation uses `-expm1(alpha*log1p(-f))` for numerical stability;
-zero and unity fractions use unit gain. Alpha is interpolated linearly in
-log(alpha) versus log(E0), using the final frozen 28-node table for each ion.
-The 140 fitted coefficients are embedded in `CYGNOScreeningResponse.hh`;
-there are no runtime data-file paths or environment switches.
+| Projectile energy | Transfer parameter |
+|---|---:|
+| 0.25 keV | 0.25 eV |
+| 1 keV | 1 eV |
+| 10 keV | 10 eV |
+| 100 keV | 100 eV |
+| 1000 keV | 100 eV |
 
-The same gain multiplies `energyDep_QF`, `energyDep_NRQF`, and both corresponding
-custom per-hit vectors. It leaves raw deposited energies, positions, momenta,
-track IDs, native Geant4 ionising/NIEL-related channels and primary truth
-unchanged. Scalar/vector response sums remain consistent. Normalized charge
-geometry within each event is preserved, including its centroid, normalized
-covariance and head-tail fractions. The nonlinear event mapping changes yield
-fluctuations; it does not establish a microscopic ionisation or Fano model.
+This controls approximate cross-section table construction and collision
+sampling, not an exact sharp lower bound on every sampled transfer. Fine
+sampling at low energy preserves low-energy direction/range while coarser
+high-energy sampling reduces actual native steps. ZBL potential coefficients
+and screening lengths are not fitted.
 
-Application is restricted to one vertex with one supported primary and E0 in
-0.25-1000 keV. Other events retain the original local response. For eligible
-events a nonfinite response or fraction outside [0,1] raises a fatal exception.
-The correction is calibrated for contained recoil runs: it does not establish
-the response of escaping tracks, other gas mixtures, multi-primary events or
-neutron-induced recoil cascades. Those still undergo the modified transport,
-but do not acquire a separately validated event response calibration.
+The constructor low-energy limit remains 0.1 eV, its terminal cutoff 1 eV/u,
+and the existing charged tracking threshold 25 eV. The maximum-step law remains
+`cap * min(1,sqrt(E/40 keV))`, without a spatial floor. The NR macros use:
 
-The final dense fit used 300 fresh events/node/ion (42,000 training events).
-It was tested on 27 fresh midpoint energies with 150 events/ion/energy
-(20,250 events) and a further 1,000 log-uniform events/ion (5,000 events).
-The earlier rejected five-anchor correction is not included. Midpoint median
-absolute relative QF errors are 0.056%, 0.537%, 0.467%, 0.608%, 0.502% for
-H, He, C, O, F; the largest individual midpoint error is 3.872%. Maximum
-absolute spectrum-bin errors are respectively 1.96%, 2.71%, 4.87%, 1.54%,
-2.02%. These are finite-sample checks, not uncertainty guarantees.
+| Ion | Original cap (um) | Screening cap (um) |
+|---|---:|---:|
+| H1 | 52 | 208 |
+| He4 | 26 | 208 |
+| C12 | 13 | 52 |
+| O16 | 6.5 | 26 |
+| F19 | 3.25 | 13 |
 
-## Comparison with the original branch and TRIM
+Every saved record is still a native Geant4 step. The prototype's Urban MSC
+activation at 100 MeV total and screened maximum at 100 MeV/u are retained;
+their differing energy conventions are not a validated high-energy handoff.
+Qualification is limited to the stated NR range at or below 1 MeV total.
 
-The independent matched comparison uses 200 events per energy, ion and model
-at 0.25, 1, 10, 100 and 1000 keV: 5,000 scored events/model. Additional
-25 and 100 eV controls are diagnostic and excluded from the scores. Initial
-energies and directions are identical between models. The current-branch
-control was run before integration; its source hashes are retained in the
-development manifests. The new branch is checked by replay against the
-selected prototype, retaining the actual branch physics and event response.
+## TRIM response: integrate the existing derivative
 
-The table reports equal-weight mean absolute relative discrepancies from TRIM
-for range and QF; the cosine discrepancy is absolute, not a percentage.
+The original hard-coded TRIM mean-response curves remain. For
+`R(E) = E * QF_TRIM(E)`, replace the original finite-step approximation
+`deposit * dR/dE(Epre)` by:
 
-| Ion | Endpoint error original / screening (%) | Projected error original / screening (%) | Mean cosine error original / screening | QF error original / screening (%) |
-|---|---:|---:|---:|---:|
-| H1 | 41.65 / 4.52 | 44.91 / 4.73 | 0.0805 / 0.0177 | 2.07 / 0.18 |
-| He4 | 27.27 / 14.51 | 28.86 / 12.31 | 0.0275 / 0.0163 | 1.98 / 0.60 |
-| C12 | 48.87 / 10.51 | 57.37 / 12.07 | 0.2084 / 0.0201 | 1.81 / 0.43 |
-| O16 | 50.23 / 14.11 | 62.93 / 14.19 | 0.3063 / 0.0156 | 1.89 / 0.65 |
-| F19 | 48.90 / 9.81 | 63.91 / 10.15 | 0.3270 / 0.0201 | 2.13 / 0.89 |
+```
+custom_hit_response = R(Epre) - R(max(0, Epre - local_raw_deposit))
+```
 
-Across ions the mean endpoint discrepancy falls from 43.38% to 10.69%, and
-the cosine discrepancy from 0.1900 to 0.0180. These descriptive summaries
-do not establish improvement at every energy or in every observable.
-At 1 MeV the new endpoint/TRIM ratios are H 1.015, He 1.133, C 0.681,
-O 0.680 and F 0.717: heavy-ion endpoints remain approximately 28-32% short.
+This integrates the same derivative over the finite deposit. Very small
+deposits use the midpoint derivative to avoid subtraction loss. The existing
+sub-25 eV extrapolation remains; a terminal deposit gives `R(Epre)`, matching
+the mean-QF prescription. ER hits retain raw energy as before.
 
-Endpoint range is |x_stop-x_start|; projected range is the displacement dotted
-with the initial unit direction. Bending cosine uses that same displacement,
-not final momentum or detector reconstruction. Backward means negative
-projection. The machine-readable [comparison table](screening-comparison.csv)
-contains both models at each energy, MC SEM, TRIM reference information,
-backward fractions with Wilson 95% intervals, longitudinal standard deviation,
-transverse RMS, raw-energy budgets, steps and cascade track counts. In that
-table `current` denotes the original branch and `candidate` this branch;
-`QF_fixed_calibration` is the output response compared here, while
-`QF_original` retains the pre-event-correction response. TRIM range means can
-also be recovered as `endpoint_mm/endpoint_ratio` and analogously for projection.
+The earlier screened prototype's fitted 28-node event-gain tables and uniform
+event correction are removed. No new response fit is needed. Custom scalars
+and hit vectors are summed through the original event action. Raw and native
+Geant4 ionising/NIEL-derived channels keep their original meanings.
 
-Original raw-energy excess above E0*(1+0.0001) appears in 26/5,000 scored
-events (0 H, 6 He, 8 C, 7 O, 5 F); the screened sample has zero such events.
-QF fitting does not rescale or repair raw energy. The original budget issue
-was traced in development to continuous nuclear stopping interactions.
-Mean total step counts per event increase from 172/99/100/101/102 to
-458/1139/3322/5062/6294 for H/He/C/O/F. These indicate transport cost,
-not a wall-time benchmark.
+For a contained primary-only recoil with entirely local deposition, increments
+telescope to `R(E0)`. Close agreement with the frozen TRIM QF curve is therefore
+**by construction, not an independent microscopic prediction**. Small departures
+include effects of separately tracked electronic secondaries. Numerical
+step-size response fluctuations are removed; an intrinsic NR yield-fluctuation
+or Fano model is not supplied by this prescription.
 
-The frozen range reference contains 195 points from 897 batches / 89,700
-TRIM ions. Stopping-point spreads are reconstructed from cohort means, SEM
-and N. Range error bars include finite Geant4 and TRIM statistics where
-reported, excluding interpolation/model systematics. QF fit errors are
-conditional on the frozen TRIM response and calibration scheme. TRIM electronic
-energy includes excitation and is not directly measured collected charge.
-Full local charge profiles, reconstructed angular resolution, head-tail
-efficiency, yield fluctuations and curved track length are not independently
-validated by agreement of these event means. TRIM sampled polyline length and
-Geant4 true step-path length must not be equated.
+## Fresh matched comparison
 
-## ROOT output and the 10 GB target
+The final test uses **10,000 fresh events per ion per model**, 100,000 events
+total. Source arrays (energies, positions, directions and IDs) match bitwise.
+The control is built from an immutable archive of the base commit. Both use
+the original full ROOT schema and a read-only primary tracking observer.
 
-The original ROOT schema and full hit vectors are retained. Explicit recoils
-greatly increase hit count: the screened full-hit 1,000-event log-uniform pilot
-projected approximately 37, 114, 297, 503 and 572 GB per million events for
-H/He/C/O/F. **This minimal branch does not meet 10 GB per million events.**
+Single H1, He4, C12, O16 or F19 primaries have log-uniform total energy
+0.25-1000 keV and isotropic direction at (0,0,245) mm in the existing 900 mbar,
+293.15 K He/CF4 gas. All primary tracks stop inside sensitive gas. Geometry,
+composition, source distributions and production cuts are unchanged; transport
+resolution changes are listed above.
 
-The earlier compact-output experiment projected 1.79, 2.46, 5.62, 8.16 and
-7.91 GB/million for those ions. Those results required adaptive aggregation,
-integer coordinates/charge fractions and removal of raw/native per-hit
-vectors while retaining event totals and truth. They are 1,000-event pilot
-extrapolations, not measured million-event files. That schema and its reader
-integration are separate work and are deliberately absent from this minimal
-physics patch. Do not use the packed projections as this branch's file size.
+The scores equally weight ten logarithmic energy bins. Every event is divided
+by the frozen TRIM expectation at its own energy. These descriptive mean
+absolute discrepancies are not significance-weighted goodness-of-fit tests.
+They are not directly interchangeable with the earlier five-energy scores.
 
-## Exact code inventory and build
+| Ion | Endpoint error original / screening (%) | Projected error original / screening (%) | Mean cosine error original / screening |
+|---|---:|---:|---:|
+| H1 | 34.52 / 5.77 | 37.96 / 3.30 | 0.0711 / 0.0183 |
+| He4 | 21.10 / 21.23 | 23.73 / 20.10 | 0.0349 / 0.0094 |
+| C12 | 48.52 / 12.52 | 54.69 / 13.04 | 0.1684 / 0.0149 |
+| O16 | 51.00 / 11.51 | 58.81 / 12.56 | 0.2165 / 0.0156 |
+| F19 | 51.80 / 9.88 | 60.24 / 10.99 | 0.2407 / 0.0169 |
 
-* `CMakeLists.txt`: three lines compile the two vendored TestEm7 source files
-  and expose their private include directory.
-* `src/CYGNOPhysicsList.cc`: 34 added lines include/register the hybrid screened
-  ion processes after the standard constructors, removing overlapping processes.
-* `src/CYGNOEventAction.cc`: seven added lines include the calibration helper
-  and apply its uniform gain before writing existing response scalars/vectors.
-* `include/CYGNOScreeningResponse.hh`: single event helper and frozen alpha table.
-* `external/TestEm7/`: seven required files, license and provenance README;
-  only the screened source has the two numerical changes listed above.
-* `docs/`: this note and the 50-row original/screening comparison dataset.
+Endpoint agreement improves for H/C/O/F; He endpoint agreement is essentially
+unchanged. Bending improves in these descriptive scores. Residual errors
+remain, and average improvement does not imply agreement at every energy.
+Endpoint bending concerns displacement relative to the initial direction,
+not final momentum or a reconstructed detector angle.
 
-Build with the existing Geant4/ROOT environment; no additional dependency is
-introduced beyond the included TestEm7 sources:
+In the highest energy bin (geometric means about 0.66 MeV), endpoint/TRIM
+ratios are H 1.009, He 1.164, C 0.695, O 0.696 and F 0.749. C/O endpoints
+therefore remain approximately 30% short and F about 25% short in that bin.
+
+The original sample has 235/50,000 raw sensitive-gas deposits above
+`E0 * 1.0001`, reaching 8.12% excess in the largest F event. The new sample has
+zero such events, with no raw-energy rescaling. Continuous nuclear stopping
+was implicated in the original budget excess during earlier diagnostics.
+
+## File-size qualification
+
+Actual 10,000-event files, scaled to one million events:
+
+| Ion | Original GB/million | Screening GB/million |
+|---|---:|---:|
+| H1 | 9.638 | 8.786 |
+| He4 | 9.217 | 9.494 |
+| C12 | 9.335 | 7.545 |
+| O16 | 8.955 | 7.335 |
+| F19 | 8.923 | 7.354 |
+
+All new pilot projections are below 10 GB; He has about 5% margin. These are
+measurements of full-schema files followed by sample-size extrapolation,
+**not measured million-event files or an arbitrary-spectrum size guarantee**.
+A high-energy-concentrated sample or changed caps requires another size check.
+No output compaction or special decoder contributes to these numbers.
+Mean native hit counts are approximately 78, 82, 65, 63 and 63 for H/He/C/O/F.
+Step counts are not a wall-time benchmark.
+
+## Checks, uncertainty and limits
+
+All ROOT branch names and types match the original. All six event energy
+channels match their hit-vector sums. IDs, vector lengths, raw budgets and
+contained stopping are checked for all 50,000 new events. Source arrays match
+bitwise between models. Both ordinary and observed production targets build.
+
+The frozen TRIM range reference has 195 energy/species points from 897 batches
+and 89,700 ions. Range ratio errors include finite Geant4 statistics and
+conditional TRIM mean uncertainty, excluding interpolation/model systematics.
+TRIM mixture spread curves include the variation of energy inside each bin.
+Backward fractions use Wilson 95% intervals. Geant4 true curved path is not
+equated with the sampled TRIM polyline.
+
+Local target-energy deposition omits explicit secondary-recoil branches and
+their spatial correlations. Good primary ranges/bending and imposed TRIM mean
+QF do not independently validate charge-cloud morphology, head-tail efficiency,
+reconstructed angular resolution or intrinsic yield fluctuations. The report
+compares charge-axis/head-tail quantities between models; the frozen reference
+does not supply per-event 3D charge clouds for their TRIM validation. A detector
+response assessment remains necessary.
+
+## Code inventory and build
+
+* `src/CYGNOPhysicsList.cc`: screened ion transport replaces overlapping nuclear
+  stopping/scattering; target recoil energy is locally deposited.
+* `external/TestEm7/G4ScreenedNuclearRecoil.cc`: adaptive transfer parameter,
+  plus the existing ZBL quadrature continuation and consistent terminal-energy
+  fixes. Other required TestEm7 sources/headers and license are retained.
+* `src/CYGNOHit.cc`: finite-step integral of the original TRIM response.
+* Five `macro/nuclear_recoils_4pi/*.mac` files: revised maximum-step caps.
+* `CMakeLists.txt`: compile two vendored TestEm7 implementation units.
+* The former event-calibration header is removed. ROOT writing, hit creation,
+  event output and primary generation have no changes from the original branch.
 
 ```sh
 cmake -S . -B build_screening -DWITH_GEANT4_UIVIS=OFF
 cmake --build build_screening --parallel 3
 ```
 
-Use the existing recoil macros and geometry setup. Switching branches must use
-a separate or rebuilt executable; an old executable does not acquire screening
-from the macro alone. There is no physics-selection runtime flag in this branch.
+Use the existing ROOT reader and the branch's NR macros. Switching branches
+requires a rebuilt or separate executable. Production has no scan environment
+variables or compact-output mode.
 
-## Integration verification
-
-Both the normal production target and an observed build compiled successfully.
-A 7,000-event replay (1,400 per ion, including the low-energy diagnostics)
-reproduced every primary tracking CSV field exactly against the selected
-prototype. Raw deposited energies and native Geant4 response were bitwise
-identical. The embedded response matched the frozen table calculation within
-2e-14 numerical tolerance. The observed build retained this branch's actual
-physics registration, vendored process and calibrated event action; diagnostics
-replaced source sampling/output booking and added read-only tracking/energy
-callbacks. Replays verify integration and are not additional independent
-physics statistics. The 50 scored comparison rows are included alongside this
-note so its numerical comparison does not depend on generated build directories.
-An additional 20-event log-uniform run per ion used the actual production
-executable and full ROOT booking: all 100 events passed scalar/vector energy
-sum checks and the bounded response check. These small runs verify output
-integration; they do not measure a million-event file size.
-
-Upstream source: [Geant4 v11.4.0 TestEm7](https://github.com/Geant4/geant4/tree/v11.4.0/examples/extended/electromagnetic/TestEm7).
-Original notices and license are included in `external/TestEm7`.
+Upstream: [Geant4 v11.4.0 TestEm7](https://github.com/Geant4/geant4/tree/v11.4.0/examples/extended/electromagnetic/TestEm7).
+Original notices and license are retained in `external/TestEm7`.
