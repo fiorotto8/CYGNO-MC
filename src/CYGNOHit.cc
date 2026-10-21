@@ -6,6 +6,7 @@
 #include "G4VisAttributes.hh"
 #include "CYGNOSRIMQuenching.hh"
 #include "G4Exception.hh"
+#include <algorithm>
 
 G4ThreadLocal G4Allocator<CYGNOHit>* CYGNOHitAllocator=0;
 
@@ -105,11 +106,21 @@ CYGNOSRIM::Response HitResponse(const CYGNOSRIM::Model& model, double energy_keV
 void CYGNOHit::ApplyQuenching()
 {
   const auto* model = CYGNOSRIM::FindModel(particleID);
-  if (model) edep *= HitResponse(*model, kinEne).dRdE;
+    if (model) {
+      // Integrate the same TRIM derivative over the finite local deposit.
+      // This removes the step-size-dependent left-endpoint quadrature bias.
+      const double raw = edep;
+      if (raw < 1.e-6*kinEne)
+        edep *= HitResponse(*model, kinEne - 0.5*raw).dRdE;
+      else {
+        const double after = std::max(0., kinEne - raw);
+        edep = kinEne*HitResponse(*model, kinEne).qf
+             - after*HitResponse(*model, after).qf;
+      }
+    }
 }
 
 void CYGNOHit::ApplyQuenchingAvg()
 {
-  const auto* model = CYGNOSRIM::FindModel(particleID);
-  if (model) edep *= HitResponse(*model, kinEne).qf;
+    ApplyQuenching();
 }

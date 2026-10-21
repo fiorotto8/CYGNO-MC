@@ -26,5 +26,5 @@
 /random/setSeeds 578656 603927334
 # Recoil cap: stepmax * min(1,sqrt(E/40 keV)); no spatial floor.
 /process/em/lowestMuHadEnergy 25 eV
-/CYGNO/stepmax 6.5 um
+/CYGNO/stepmax 26 um
 /run/beamOn 1000000

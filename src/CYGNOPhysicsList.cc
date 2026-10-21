@@ -290,10 +290,10 @@ void CYGNOPhysicsList::ConstructProcess()
   AddDecay();  
 */
   G4VModularPhysicsList::ConstructProcess();
-  // Explicit screened elastic recoils replace continuous nuclear stopping and
-  // low-energy ion scattering. Keep option4 electronic ionisation unchanged.
+  // Screened primary scattering with local target-recoil deposition keeps the
+  // native-step ROOT output affordable. Option4 electronic stopping is retained.
   auto* screened = new G4ScreenedNuclearRecoil(
-      "ScreenedElastic", "zbl", true, 1.*eV, 0.1*eV);
+      "ScreenedElastic", "zbl", false, 1.*eV, 0.1*eV);
   screened->SetMaxEnergyForScattering(100.*MeV);
   auto* ions = GetParticleIterator();
   ions->reset();

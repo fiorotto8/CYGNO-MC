@@ -1039,7 +1039,10 @@ void G4NativeScreenedCoulombCrossSection::LoadData(G4String screeningKey, G4int 
       for (size_t idx = 0; idx < sigLen; idx++) {
         G4double ee = std::exp(idx * ((l1 - l0) / sigLen) + l0);
         G4double gamma = 1.0 + ee / m1c2;
-        G4double eratio = (cmfact0 * st.emin) / ee;
+        // Resolve softer transfers at low energy without storing thousands of
+        // high-energy collision steps. ee is total projectile kinetic energy.
+        const G4double transfer = std::min(100.*eV, std::max(st.emin, 1.e-3*ee));
+        G4double eratio = (cmfact0 * transfer) / ee;
         // factor by which ee needs to be reduced to get emin
         G4double theta = thetac(gamma * a1, a2, eratio);
 

@@ -16,6 +16,12 @@ Only `G4ScreenedNuclearRecoil.cc` differs from upstream:
    continuation for the other upstream screening keys.
 2. In `PostStepDoIt`, include `incidentEnergy < lowEnergyLimit` in the terminal
    condition, matching `GetMeanFreePath`, before accessing collision handlers.
+3. In cross-section table construction, replace the constant transfer cutoff by
+   `min(100 eV, max(0.1 eV, 0.001 * E))`, with E the total projectile energy.
+   This is a transport-resolution approximation for the full native-hit output
+   budget. The application disables explicit target-recoil creation and uses
+   the native local recoil-energy deposition instead. These physics choices
+   differ from the original fully tracked cascade prototype.
 
 The application supplies the actual 0.1 eV physics cutoff in the constructor;
 using only the upstream setter would leave its initial low-energy limit stale.

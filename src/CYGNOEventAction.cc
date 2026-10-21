@@ -11,7 +11,6 @@
 #include "G4ios.hh"
 #include "G4SDManager.hh"
 #include "G4AnalysisManager.hh"
-#include "CYGNOScreeningResponse.hh"
 
 #include <fstream>
 #include <unistd.h>
@@ -185,12 +184,6 @@ void CYGNOEventAction::EndOfEventAction(const G4Event* evt)
 	       energyDep_QF_geant +=  rawEdep;
 	    }
       }
-      // Uniform event response calibration preserves normalized charge geometry.
-      const G4double gain = CYGNOScreeningResponseGain(evt, energyDep_QF);
-      energyDep_QF *= gain;
-      energyDep_NRQF *= gain;
-      for (auto& e : v_energyDep_hits_QF) e *= gain;
-      for (auto& e : v_energyDep_hits_NRQF) e *= gain;
       man->FillNtupleDColumn(2,4,energyDep);
       man->FillNtupleDColumn(2,5,energyDep_QF);
       man->FillNtupleDColumn(2,6,energyDep_QF_geant);
