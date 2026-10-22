@@ -1,6 +1,9 @@
 # Introduction
 
 This repository hosts the Monte Carlo simulation for CYGNO experiment.
+
+Compared with `g4v11.3_cygno04`, this branch replaces low-energy ion nuclear stopping/scattering with ZBL screened collisions and local recoil deposition, integrates the existing TRIM response per hit, and increases NR step caps, preserving option4 electronic stopping and ROOT output.
+
 The prerequisite to run this simulations is to have ROOT (v6.X.X), GEANT4 (v11.2.X) and CADMesh (v2) software installed.
 For more informations about the software see:
 * ROOT:  https://root.cern.ch/ 
