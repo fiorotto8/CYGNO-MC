@@ -177,4 +177,7 @@ cython_debug/
 .DS_Store
 
 tests/
-docs/
+docs/**
+!docs/**/
+!docs/**/*.pdf
+!docs/.gitattributes
