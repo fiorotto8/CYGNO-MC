@@ -181,3 +181,6 @@ docs/**
 !docs/**/
 !docs/**/*.pdf
 !docs/.gitattributes
+
+# Keep generated documentation figures local.
+docs/figures/
