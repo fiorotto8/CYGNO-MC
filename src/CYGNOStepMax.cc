@@ -40,6 +40,8 @@ G4double CYGNOStepMax::PostStepGetPhysicalInteractionLength(
   const G4int pdg = aTrack.GetDefinition()->GetPDGEncoding();
   if (fMaxChargedStep < DBL_MAX && (pdg == 2212 || pdg > 1000000000))
     ProposedStep *= std::min(1., std::sqrt(aTrack.GetKineticEnergy()/(40.*CLHEP::keV)));
+  if (pdg == 11 && aTrack.GetParentID() == 0 && aTrack.GetTrackLength() < 1.*mm)
+    ProposedStep = std::min(ProposedStep, 5.*um);
 
   return ProposedStep;
 }
