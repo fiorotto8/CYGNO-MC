@@ -18,6 +18,7 @@
 #include "G4IntersectionSolid.hh"
 #include "G4UnionSolid.hh"
 #include "G4SubtractionSolid.hh"
+#include "G4DisplacedSolid.hh"
 #include "G4Exception.hh"
 #include <filesystem>
 #include <cstdlib>
@@ -422,10 +423,20 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
     // CAD geometry is optional, as in the original analytic-gas mode.
     std::error_code pathError;
     fUseCADGeometry = std::filesystem::is_directory(CYGNOGeomPath.c_str(), pathError);
+    // Identify the two supported layouts by their distinct component files.
+    fUseV4Geometry = fUseCADGeometry &&
+        (std::filesystem::exists(CYGNOGeomPath + std::string("/N66.stl")) ||
+         std::filesystem::exists(CYGNOGeomPath + std::string("/GasBoundary.stl")));
     if (fUseCADGeometry) {
-      G4cout << "Geometry mode: CAD v3 (" << CYGNOGeomPath << ")" << G4endl;
-      const std::vector<G4String> required = {"FCSupport.stl", "GemFrame.stl", "FieldCage.stl",
-          "GEM.stl", "InnerShieldCu.stl", "OuterShieldCu.stl", "PEBase.stl", "PMMABox.stl"};
+      G4cout << "Geometry mode: CAD " << (fUseV4Geometry ? "v4" : "v3")
+             << " (" << CYGNOGeomPath << ")" << G4endl;
+      // An existing CAD directory must be complete. Check before costly imports.
+      const std::vector<G4String> required = fUseV4Geometry
+          ? std::vector<G4String>{"N66.stl", "FieldCage.stl", "GEM.stl",
+              "Cu_radiopure.stl", "Cu_nonradiopure.stl", "PEBase.stl", "PMMA.stl",
+              "GasBoundary.stl"}
+          : std::vector<G4String>{"FCSupport.stl", "GemFrame.stl", "FieldCage.stl",
+              "GEM.stl", "InnerShieldCu.stl", "OuterShieldCu.stl", "PEBase.stl", "PMMABox.stl"};
       for (const auto& filename : required) {
         const G4String path = CYGNOGeomPath + "/" + filename;
         if (!std::ifstream(path).good()) {
@@ -440,14 +451,21 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
         return CADMesh::TessellatedMesh::FromSTL(path);
       };
       G4cout << "Memory before loading CAD: " << GetMemoryUsageMB() << " MB" << G4endl;
-      mesh_FCSupport = loadMesh("FCSupport.stl");
-      mesh_GemFrame = loadMesh("GemFrame.stl");
+      if (fUseV4Geometry) {
+        mesh_N66 = loadMesh("N66.stl");
+      } else {
+        mesh_FCSupport = loadMesh("FCSupport.stl");
+        mesh_GemFrame = loadMesh("GemFrame.stl");
+      }
       mesh_FieldCage = loadMesh("FieldCage.stl");
       mesh_GEM = loadMesh("GEM.stl");
-      mesh_InnerShieldCu = loadMesh("InnerShieldCu.stl");
-      mesh_OuterShieldCu = loadMesh("OuterShieldCu.stl");
+      mesh_InnerShieldCu = loadMesh(fUseV4Geometry ? "Cu_radiopure.stl" : "InnerShieldCu.stl");
+      mesh_OuterShieldCu = loadMesh(fUseV4Geometry ? "Cu_nonradiopure.stl" : "OuterShieldCu.stl");
       mesh_PEBase = loadMesh("PEBase.stl");
-      mesh_PMMABox = loadMesh("PMMABox.stl");
+      mesh_PMMABox = loadMesh(fUseV4Geometry ? "PMMA.stl" : "PMMABox.stl");
+      if (fUseV4Geometry) {
+        mesh_GasBoundary = loadMesh("GasBoundary.stl");
+      }
       G4cout << "Memory after loading CAD: " << GetMemoryUsageMB() << " MB" << G4endl;
     } else {
       G4cout << "Geometry mode: nominal analytic detector; CAD directory unavailable: "
@@ -473,12 +491,23 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
       //cad_Cathode_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Cu"));
 
 
-      //FCSupport
-      cad_FCSupport_solid = mesh_FCSupport->GetSolid();
-      cad_FCSupport_logical = new G4LogicalVolume(cad_FCSupport_solid, CYGNOMaterials->Material("Nylon66"), "cad_FCSupport_logical", 0, 0, 0);
-      cad_FCSupport_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Perspex"));
-      
-      
+      if (fUseV4Geometry) {
+        // Combined field-cage supports and GEM frames.
+        cad_N66_solid = mesh_N66->GetSolid();
+        cad_N66_logical = new G4LogicalVolume(cad_N66_solid,
+            CYGNOMaterials->Material("Nylon66"), "cad_N66_logical");
+        cad_N66_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Perspex"));
+      } else {
+        cad_FCSupport_solid = mesh_FCSupport->GetSolid();
+        cad_FCSupport_logical = new G4LogicalVolume(cad_FCSupport_solid,
+            CYGNOMaterials->Material("Nylon66"), "cad_FCSupport_logical");
+        cad_FCSupport_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Perspex"));
+        cad_GemFrame_solid = mesh_GemFrame->GetSolid();
+        cad_GemFrame_logical = new G4LogicalVolume(cad_GemFrame_solid,
+            CYGNOMaterials->Material("Nylon66"), "cad_GemFrame_logical");
+        cad_GemFrame_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Perspex"));
+      }
+
       //FIeldCage
       cad_FieldCage_solid = mesh_FieldCage->GetSolid();
       cad_FieldCage_logical = new G4LogicalVolume(cad_FieldCage_solid, CYGNOMaterials->Material("FieldCage"), "cad_FieldCage_logical", 0, 0, 0);
@@ -490,11 +519,6 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
       cad_GEM_logical = new G4LogicalVolume(cad_GEM_solid, CYGNOMaterials->Material("GEM"), "cad_GEM_logical", 0, 0, 0);
       cad_GEM_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Cu"));
 
-      //GEM frame
-      cad_GemFrame_solid = mesh_GemFrame->GetSolid();
-      cad_GemFrame_logical = new G4LogicalVolume(cad_GemFrame_solid, CYGNOMaterials->Material("Nylon66"), "cad_GemFrame_logical", 0, 0, 0);
-      cad_GemFrame_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Perspex"));
-      
       //InnerShield Cu
       cad_InnerShieldCu_solid = mesh_InnerShieldCu->GetSolid();
       cad_InnerShieldCu_logical = new G4LogicalVolume(cad_InnerShieldCu_solid, CYGNOMaterials->Material("Cu"), "cad_InnerShieldCu_logical", 0, 0, 0);
@@ -519,17 +543,22 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
 
     }
   
-    //TPC gas //FIXME (overlap with PMMA box)
-    G4double TPC_x = 640.*mm;
-    G4double TPC_y = 920.*mm;
-    G4double TPC_z = 1060.*mm;
-      
-    name_phys="TPC";
-    name_log=name_phys+"_log";
-    name_solid=name_phys+"_solid";
-    G4Box* TPC_box = new G4Box(name_solid,0.5*TPC_x,0.5*TPC_y,0.5*TPC_z);
-    TPC_log = new G4LogicalVolume(TPC_box,CYGNOMaterials->Material("CYGNO_gas"),name_log,0,0,0);
-    
+    G4RotationMatrix new_cad_rotation;
+    new_cad_rotation.rotateX(-90.*deg);
+    const G4Transform3D new_cad_transform(
+        new_cad_rotation, G4ThreeVector(0., 0., 1.39874923*mm));
+
+    G4VSolid* gas_solid = nullptr;
+    if (fUseV4Geometry) {
+      auto* gas_cad_solid = new G4SubtractionSolid("TPC_cad_solid",
+          mesh_GasBoundary->GetSolid(), cad_PMMABox_solid);
+      gas_solid = new G4DisplacedSolid("TPC_solid", gas_cad_solid, new_cad_transform);
+    } else {
+      gas_solid = new G4Box("TPC_solid", 320.*mm, 460.*mm, 530.*mm);
+    }
+    TPC_log = new G4LogicalVolume(gas_solid,
+        CYGNOMaterials->Material("CYGNO_gas"), "TPC_log", 0, 0, 0);
+
     //CYGNO fiducial gas
     G4double CYGNO_x = 484.*mm;
     G4double CYGNO_y = 784.*mm;
@@ -632,14 +661,16 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
     rot_cad = G4RotationMatrix(0,0,0);
     rot_cad.rotateX(-90.*deg);
 
+    const G4Transform3D shield_transform = fUseV4Geometry
+        ? new_cad_transform : G4Transform3D(rot_cad,tr_cad);
     if (fUseCADGeometry){
       cad_PEBase_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
         	    cad_PEBase_logical,"cad_PEBase_physical", AirBox_log, false, 0, true); 
-      cad_InnerShieldCu_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
+      cad_InnerShieldCu_physical = new G4PVPlacement(shield_transform,
         	    cad_InnerShieldCu_logical,"cad_InnerShieldCu_physical", AirBox_log, false, 0, true);
-      cad_OuterShieldCu_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
+      cad_OuterShieldCu_physical = new G4PVPlacement(shield_transform,
         	    cad_OuterShieldCu_logical,"cad_OuterShieldCu_physical", AirBox_log, false, 0, true);
-      cad_PMMABox_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
+      cad_PMMABox_physical = new G4PVPlacement(shield_transform,
         	    cad_PMMABox_logical,"cad_PMMABox_physical", AirBox_log, false, 0, true); 
     }
     tr=G4ThreeVector(0.,0.,0.);
@@ -687,17 +718,20 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
     tr=G4ThreeVector(0.,0.,0.);
     rot = G4RotationMatrix();
     if (fUseCADGeometry){
-      //cad_Cathode_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), cad_Cathode_logical,"cad_Cathode_physical", TPC_log, false, 0, true);
       Cathode_phys = new G4PVPlacement(G4Transform3D(rot,tr), Cathode_log,"Cathode", TPC_log, false, 0, true);
-
       cad_FieldCage_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
         	    cad_FieldCage_logical,"cad_FieldCage_physical", TPC_log, false, 0, true);
-      cad_FCSupport_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
-        	    cad_FCSupport_logical,"cad_FCSupport_physical", TPC_log, false, 0, true);
+      if (fUseV4Geometry) {
+        cad_N66_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad),
+            cad_N66_logical,"cad_N66_physical", TPC_log, false, 0, true);
+      } else {
+        cad_FCSupport_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad),
+            cad_FCSupport_logical,"cad_FCSupport_physical", TPC_log, false, 0, true);
+        cad_GemFrame_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad),
+            cad_GemFrame_logical,"cad_GemFrame_physical", TPC_log, false, 0, true);
+      }
       cad_GEM_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
         	    cad_GEM_logical,"cad_GEM_physical", TPC_log, false, 0, true);
-      cad_GemFrame_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
-        	    cad_GemFrame_logical,"cad_GemFrame_physical", TPC_log, false, 0, true);
     }  
     
 	//camera_phys = new G4PVPlacement(rotcam0,trcam0,camera_log,"camera",AirBox_log, false, 0, true);
@@ -754,9 +788,13 @@ void CYGNODetectorConstruction::SaveMassAndDensity()
   CYGNOProperties->AddVolumeNameMassAndDensity(camera_lens_log);
   if (fUseCADGeometry) {
     //CYGNOProperties->AddVolumeNameMassAndDensity(cad_Cathode_logical);
-    CYGNOProperties->AddVolumeNameMassAndDensity(cad_FCSupport_logical);
+    if (fUseV4Geometry) {
+      CYGNOProperties->AddVolumeNameMassAndDensity(cad_N66_logical);
+    } else {
+      CYGNOProperties->AddVolumeNameMassAndDensity(cad_FCSupport_logical);
+      CYGNOProperties->AddVolumeNameMassAndDensity(cad_GemFrame_logical);
+    }
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_FieldCage_logical);
-    CYGNOProperties->AddVolumeNameMassAndDensity(cad_GemFrame_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_InnerShieldCu_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_OuterShieldCu_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_GEM_logical);
@@ -810,10 +848,9 @@ void CYGNODetectorConstruction::UpdateGeometry()
   AirBox_log=0;
 
   //cad_Cathode_logical=0;
-  cad_FCSupport_logical=0;
+  cad_N66_logical=0;
   cad_FieldCage_logical=0;
   cad_InnerShieldCu_logical=0;
-  cad_GemFrame_logical=0;
   cad_OuterShieldCu_logical=0;
   //cad_Cathode_logical=0;
   cad_GEM_logical=0;

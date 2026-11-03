@@ -102,15 +102,18 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
 
     //CADMesh
     G4bool fUseCADGeometry = false;
+    G4bool fUseV4Geometry = false;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_Cathode;
+    std::shared_ptr<CADMesh::TessellatedMesh> mesh_N66;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_FCSupport;
+    std::shared_ptr<CADMesh::TessellatedMesh> mesh_GemFrame;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_FieldCage;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_GEM;
-    std::shared_ptr<CADMesh::TessellatedMesh> mesh_GemFrame;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_InnerShieldCu;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_OuterShieldCu;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_PEBase; 
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_PMMABox;
+    std::shared_ptr<CADMesh::TessellatedMesh> mesh_GasBoundary;
     
     //Building blocks: logic volumes, sizes and positions
     G4ThreeVector  tr_Tot;
@@ -160,10 +163,11 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     
     //Solids and meshes
     G4VSolid * cad_Cathode_solid;
+    G4VSolid * cad_N66_solid;
     G4VSolid * cad_FCSupport_solid;
+    G4VSolid * cad_GemFrame_solid;
     G4VSolid * cad_FieldCage_solid;
     G4VSolid * cad_GEM_solid;
-    G4VSolid * cad_GemFrame_solid;
     G4VSolid * cad_InnerShieldCu_solid;
     G4VSolid * cad_OuterShieldCu_solid;
     G4VSolid * cad_PEBase_solid;
@@ -179,12 +183,13 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     G4LogicalVolume* AirBox_log;
 
     G4LogicalVolume * cad_Cathode_logical;
+    G4LogicalVolume * cad_N66_logical;
     G4LogicalVolume * cad_FCSupport_logical;
+    G4LogicalVolume * cad_GemFrame_logical;
     G4LogicalVolume * TPC_log;
     G4LogicalVolume * CYGNO_log;
     G4LogicalVolume * cad_FieldCage_logical;
     G4LogicalVolume * cad_GEM_logical;
-    G4LogicalVolume * cad_GemFrame_logical;
     G4LogicalVolume * cad_InnerShieldCu_logical;
     G4LogicalVolume * cad_OuterShieldCu_logical;
     G4LogicalVolume * cad_PEBase_logical;
@@ -206,12 +211,13 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     G4VPhysicalVolume* AirBox_phys;
 
     G4VPhysicalVolume * cad_Cathode_physical;
+    G4VPhysicalVolume * cad_N66_physical;
     G4VPhysicalVolume * cad_FCSupport_physical;
+    G4VPhysicalVolume * cad_GemFrame_physical;
     G4VPhysicalVolume * cad_FieldCage_physical;
     G4VPhysicalVolume * TPC_phys;
     G4VPhysicalVolume * CYGNO_phys;
     G4VPhysicalVolume * cad_GEM_physical;
-    G4VPhysicalVolume * cad_GemFrame_physical;
     G4VPhysicalVolume * cad_InnerShieldCu_physical;
     G4VPhysicalVolume * cad_OuterShieldCu_physical;
     G4VPhysicalVolume * cad_PEBase_physical;
