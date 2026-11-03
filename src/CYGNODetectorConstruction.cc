@@ -20,6 +20,7 @@
 #include "G4SubtractionSolid.hh"
 #include "G4Exception.hh"
 #include <filesystem>
+#include <cstdlib>
 
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
@@ -62,7 +63,8 @@ size_t GetMemoryUsageMB()
 }
 
 CYGNODetectorConstruction::CYGNODetectorConstruction() :
-   CYGNOGeomPath("../geometry/cygno_04_v3_ASCII/"),
+   CYGNOGeomPath(std::getenv("CYGNO_GEOMETRY_PATH")
+       ? std::getenv("CYGNO_GEOMETRY_PATH") : "../geometry/cygno_04_v3_ASCII/"),
    rockThicknessOuter(-999*m),
    rockThicknessInner(-999*m),
    //rockThicknessInner(4.*m),
