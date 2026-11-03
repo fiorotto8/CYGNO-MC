@@ -65,7 +65,7 @@ size_t GetMemoryUsageMB()
 
 CYGNODetectorConstruction::CYGNODetectorConstruction() :
    CYGNOGeomPath(std::getenv("CYGNO_GEOMETRY_PATH")
-       ? std::getenv("CYGNO_GEOMETRY_PATH") : "../geometry/cygno_04_v3_ASCII/"),
+       ? std::getenv("CYGNO_GEOMETRY_PATH") : "../geometry/cygno04_v4_ASCII/"),
    rockThicknessOuter(-999*m),
    rockThicknessInner(-999*m),
    //rockThicknessInner(4.*m),

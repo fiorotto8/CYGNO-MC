@@ -23,7 +23,7 @@ CYGNODetectorConstructionMessenger::CYGNODetectorConstructionMessenger
     
     fCYGNOCADPathCmd = new G4UIcmdWithAString("/CYGNO/pathtocad",this);
     fCYGNOCADPathCmd->SetGuidance("Set the path to CYGNO CAD *.stl files.");
-    fCYGNOCADPathCmd->SetDefaultValue("../geometry/v2/");
+    fCYGNOCADPathCmd->SetDefaultValue("../geometry/cygno04_v4_ASCII/");
     fCYGNOCADPathCmd->SetParameterName("choice",false);
     fCYGNOCADPathCmd->AvailableForStates(G4State_Init,G4State_Idle);
     
