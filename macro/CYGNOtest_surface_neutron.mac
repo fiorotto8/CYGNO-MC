@@ -64,17 +64,12 @@
 /gps/hist/point  1000.  0.000000000009
 /gps/hist/point  2000.  0.000000000004
 
-#Save only events that pass that have hits in the sensitive gas
-/CYGNO/cutoutfile 0
-/CYGNO/save_hits_branches 0
-/CYGNO/registeron 1
 #
 /run/initialize
 #change these for debug
 /run/verbose 0
 /event/verbose 0
 /tracking/verbose 0
-/CYGNO/reportingfrequency 1000
 #Output file name
 /CYGNO/outfile neutron_test
 /random/setSeeds 575841909 838392975

@@ -160,9 +160,6 @@
 /gps/hist/point 3.08923277603  0.00100591165631
 /gps/hist/point 3.14159265358  0.000592409691586
 
-/CYGNO/cutoutfile 1 # 1 : Save only events that pass that have hits in the sensitive gas, 0: save all events  
-/CYGNO/save_hits_branches 0 # 1 : save *_hits branches, 0 : do not save *_hits branches
-/CYGNO/registeron 0  # 1 : save branches *_flu to check the fluxes of particles in external shields, 0 : do not save *_flu branches
   
 #
 /run/initialize
@@ -170,7 +167,6 @@
 /run/verbose 0
 /event/verbose 0
 /tracking/verbose 0
-/CYGNO/reportingfrequency 100000
 #Output file name
 /CYGNO/outfile gamma_test
 /random/setSeeds 575841909 838392975

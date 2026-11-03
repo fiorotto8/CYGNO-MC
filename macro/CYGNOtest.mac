@@ -43,17 +43,12 @@
 /gps/pos/confine Shield2
 #/gps/pos/confine CYGNO_gas
 #
-#Save only events that pass that have hits in the sensitive gas
-/CYGNO/cutoutfile 1
-/CYGNO/save_hits_branches 0
-/CYGNO/registeron 0
 #
 /run/initialize
 #change these for debug
 /run/verbose 0
 /event/verbose 0
 /tracking/verbose 0
-/CYGNO/reportingfrequency 100000
 #Output file name
 /CYGNO/outfile 14C_test
 /random/setSeeds 575841909 838392975

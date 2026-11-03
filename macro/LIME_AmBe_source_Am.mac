@@ -38,17 +38,12 @@
 /CYGNO/stepmax 0.1 mm
 
 #
-#Save only events that pass that have hits in the sensitive gas
-/CYGNO/cutoutfile 0
-/CYGNO/save_hits_branches 1
-/CYGNO/registeron 0
 #
 /run/initialize
 #change these for debug
 /run/verbose 0
 /event/verbose 0
 /tracking/verbose 0
-/CYGNO/reportingfrequency 1000
 #Output file name
 /CYGNO/outfile test_Am_AmBe
 /random/setSeeds 575841909 838392975
