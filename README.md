@@ -1,80 +1,31 @@
-# Introduction
+# CYGNO-MC
+
+Geant4 detector simulation for CYGNO.
+
+Compared with `g4v11.3_cygno04`, this branch replaces low-energy ion nuclear stopping/scattering with ZBL screened collisions and local recoil deposition, integrates the existing TRIM response per hit, and increases NR step caps, preserving option4 electronic stopping and ROOT output.
+
+## Build and run
+
+Requires ROOT 6 and Geant4; CADMesh 2 is bundled. Locally tested with ROOT 6.36.08 and Geant4 11.4.0.
+Load the ROOT/Geant4 environments; set `Geant4_DIR`/`ROOT_DIR` to their CMake package directories if needed. From a common parent directory:
+
+```sh
+git clone --branch g4v11.3_cygno04_screening git@github.com:fiorotto8/CYGNO-MC.git
+git clone git@github.com:fiorotto8/geometry.git
+cmake -S CYGNO-MC -B CYGNO-MC-build
+cmake --build CYGNO-MC-build -j
+cd CYGNO-MC-build
+./CYGNO /path/to/run.mac
+```
+
+Run `./CYGNO` for the interactive interface. Commands: [CYGNOCommandsREADME](CYGNOCommandsREADME).
+The current CMake configuration forces Debug builds.
 
 ## Geometry
 
 Default: `../geometry/cygno04_v4_ASCII/`. Missing CAD uses the nominal analytic detector; incomplete CAD reports an error.
 Select legacy v3 with `CYGNO_GEOMETRY_PATH=../geometry/cygno_04_v3_ASCII ./CYGNO run.mac`.
 Isotope input examples are in `backgrounds/`.
-
-This repository hosts the Monte Carlo simulation for CYGNO experiment.
-
-Compared with `g4v11.3_cygno04`, this branch replaces low-energy ion nuclear stopping/scattering with ZBL screened collisions and local recoil deposition, integrates the existing TRIM response per hit, and increases NR step caps, preserving option4 electronic stopping and ROOT output.
-
-The prerequisite to run this simulations is to have ROOT (v6.X.X), GEANT4 (v11.2.X) and CADMesh (v2) software installed.
-For more informations about the software see:
-* ROOT:  https://root.cern.ch/ 
-* GEANT4: http://geant4.cern.ch/
-* CADMesh: https://github.com/christopherpoole/CADMesh
-
-
-# Setup ROOT, GEANT4 and CADMesh
-
-Setup all the environment variables of ROOT and GEANT4.
-
-## Instructions 
-
-In  general you can do
-```
-###for ROOT
-source <path-to-root>/bin/thisroot.sh
-## for pyROOT
-export LD_LIBRARY_PATH=$PYTHONDIR/lib:$LD_LIBRARY_PATH
-export PYTHONPATH=$ROOTSYS/lib:$PYTHONPATH
-## for geant4
-source <path-to-geant>/bin/geant4.sh 
-alias g4cmake="cmake -DGeant4_DIR=<path-to-geant4>lib64/Geant4-11.X.X/"
-```
-# Download CYGNO-MC repository
-
-Download geometry files
-```
-git clone git@github.com:CYGNUS-RD/geometry.git
-```
-
-Download Geant4 code 
-```
-git clone git@github.com:CYGNUS-RD/CYGNO-MC.git
-```
-
-Now you have downloaded the code in `CYGNO-MC/` directory
-
-# Setup CYGNO-MC code
-
-Create a build directory 
-```
-mkdir CYGNO-MC-build
-```
-and compile CYGNO-MC code
-```
-cd CYGNO-MC-build
-g4cmake ../CYGNOMC
-make -j`nproc`
-```
-
-Now you have the CYGNO executable in the build directory.
-You can run it in graphic mode:
-```
-./CYGNO
-```
-or specify a macro to run instructions
-```
-./CYGNO macro.mac
-```
-Some example macros are available in the `macro` directory.
-
-
-A guide of CYGNO commands is in  CYGNOCommandsREADME file.
-
 
 # Split jobs in the batch system
 
