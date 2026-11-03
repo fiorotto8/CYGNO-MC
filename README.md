@@ -27,49 +27,19 @@ Default: `../geometry/cygno04_v4_ASCII/`. Missing CAD uses the nominal analytic 
 Select legacy v3 with `CYGNO_GEOMETRY_PATH=../geometry/cygno_04_v3_ASCII ./CYGNO run.mac`.
 Isotope input examples are in `backgrounds/`.
 
-# Split jobs in the batch system
+## CNAF jobs
 
-A set of scripts to split the simulation in multiple jobs is provided in the folder `scripts`.
-Some command examples are provided for roma3 cluster, where PBS batch system is used.
-Examples of basic commands of PBS can be found in https://www.bo.infn.it/alice/introgrd/pbsabout/node17.html (or simply google).
+Follow [mycondor: Submit job to CNAF](https://github.com/CYGNUS-RD/mycondor#submit-job-to-cnaf).
+Copy the templates from `/cvmfs/sft-cygno.infn.it/config/templates/` into `Launch/Sub_folder/`.
+Edit `subber.sh` for the executable, macro arguments, CPUs and output files, then:
 
-## Submit and check status of single job
-
-Submit job:
-```
-qsub scripts/examplejob.sh
-```
-Check status:
-```
-qstat -u $USER
+```sh
+cygno_htc -t
+cd Launch
+source Sub_folder/subber.sh
+cygno_htc -q
+cygno_htc -f JOBID CEID
 ```
 
-
-## Split jobs
-
-Example to split 100M events into 100 jobs:
-```
-python scripts/submit_jobs_lngs.py -m CYGNOtest_surface_gamma --tag ext_gamma -n 100000000 -e 1000000 --builddir ../CYGNO-MC-build/ --outdir ./
-```
-
-Options meaning:
-
-* `-m` name of the macro template. The script looks for the macro in the directory `macro/` (use macro name without `.mac` extension)
-* `-n` total number of events to generate
-* `-e` events per job
-* `--tag` useful tag to identify the simulation. Output will be saved in a directory with this name
-* `--builddir` path to dir containing CYGNO executable
-* `--outdir` out path
-
-The output is saved in `<outdir>/pbs_outputs/<tag-string>`
-Also other directories will be created in `pbs_logs` and  `pbs_workdir` folders, containing respectively the logs and the copy of the macro for each job.
-
-## Submit jobs with multiple macro configurations (for radioactive decays)
-
-Example to send on batch multiple radioactive isotopes simulations:
-```
-python scripts/submit_jobs_rm3.py -m CYGNOtest --tag PbShieldRadioactivity -f U238Activity_Shield2Pb_10Pb2Cu.txt -e 1000000  --builddir /storage/local/home/cygnorm3/dimperio/CYGNO/CYGNO-MC-build/
-```
-Options meaning:
-* `-f` configuration file for isotopes to be simulated. The script looks for the file in the `background/` directory. The file contains 4 columns: Name, Z, A, NEvents
-* the other options are the same. Note that `-n` option is not necessary when `-f` option is used (and will be ignored), since the total number of events is in the configuration file
+Stage v4 geometry separately: it exceeds the guide's approximate 10 MB upload limit.
+Set a worker-visible absolute `CYGNO_GEOMETRY_PATH` and match `G4FORCENUMBEROFTHREADS` to requested CPUs.
