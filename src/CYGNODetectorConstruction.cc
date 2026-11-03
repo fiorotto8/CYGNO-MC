@@ -550,26 +550,44 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
         new_cad_rotation, G4ThreeVector(0., 0., 1.39874923*mm));
 
     G4VSolid* gas_solid = nullptr;
+    G4VSolid* active_positive = nullptr;
+    G4VSolid* active_negative = nullptr;
+    G4double CYGNO_x = (useNominalDimensions ? 500. : 484.)*mm;
+    G4double CYGNO_y = (useNominalDimensions ? 800. : 784.)*mm;
+    G4double CYGNO_z = (useNominalDimensions ? 510. : 470.)*mm;
     if (fUseV4Geometry) {
+      // Gas follows the main PMMA wall/cover boundary; material daughters displace it.
       auto* gas_cad_solid = new G4SubtractionSolid("TPC_cad_solid",
           mesh_GasBoundary->GetSolid(), cad_PMMABox_solid);
       gas_solid = new G4DisplacedSolid("TPC_solid", gas_cad_solid, new_cad_transform);
+      // Use the loaded material solids directly, so a changed support cannot
+      // leave stale sensitive-gas cuts or create tessellation overlaps.
+      const auto make_active = [&](const G4String& name, G4double centre_z) {
+        auto* box = new G4Box(name+"_box", CYGNO_x/2., CYGNO_y/2., CYGNO_z/2.);
+        const G4Transform3D material_transform(new_cad_rotation,
+            G4ThreeVector(470.*mm, 0., -centre_z));
+        auto* without_n66 = new G4SubtractionSolid(name+"_without_N66",
+            box, cad_N66_solid, material_transform);
+        return new G4SubtractionSolid(name, without_n66,
+            cad_FieldCage_solid, material_transform);
+      };
+      const G4double active_centre = CYGNO_z/2. + Cathode_z/2.;
+      active_positive = make_active("CYGNO_solid", active_centre);
+      active_negative = make_active("CYGNO_negative_solid", -active_centre);
     } else {
+      // Nominal gas envelope; the detailed PMMA cavity requires CAD mode.
       gas_solid = new G4Box("TPC_solid", 320.*mm, 460.*mm, 530.*mm);
+      active_positive = new G4Box("CYGNO_solid", CYGNO_x/2., CYGNO_y/2., CYGNO_z/2.);
+      active_negative = active_positive;
+
     }
     TPC_log = new G4LogicalVolume(gas_solid,
         CYGNOMaterials->Material("CYGNO_gas"), "TPC_log", 0, 0, 0);
 
-    //CYGNO fiducial gas
-    G4double CYGNO_x = 484.*mm;
-    G4double CYGNO_y = 784.*mm;
-    G4double CYGNO_z = 470.*mm;
-      
-    name_phys="CYGNO";
-    name_log=name_phys+"_log";
-    name_solid=name_phys+"_solid";
-    G4Box* CYGNO_box = new G4Box(name_solid,0.5*CYGNO_x,0.5*CYGNO_y,0.5*CYGNO_z);
-    CYGNO_log = new G4LogicalVolume(CYGNO_box,CYGNOMaterials->Material("CYGNO_gas"),name_log,0,0,0);
+    CYGNO_log = new G4LogicalVolume(active_positive,
+        CYGNOMaterials->Material("CYGNO_gas"), "CYGNO_log", 0, 0, 0);
+    CYGNO_negative_log = new G4LogicalVolume(active_negative,
+        CYGNOMaterials->Material("CYGNO_gas"), "CYGNO_negative_log", 0, 0, 0);
 
     //camera lenses
     G4double lens_diam = 60.*mm;
@@ -655,6 +673,7 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
 //    CYGNO_log->SetUserLimits(fStepLimit); 
 
     CYGNO_log->SetVisAttributes(CYGNOMaterials->VisAttributes("CYGNO_gas"));
+    CYGNO_negative_log->SetVisAttributes(CYGNOMaterials->VisAttributes("CYGNO_gas"));
     
     //FIXME
 
@@ -679,11 +698,11 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
     TPC_phys = new G4PVPlacement(G4Transform3D(rot, tr),
       	    TPC_log,"TPC_gas", AirBox_log, false, 0, true);
     
-    tr_CYGNO_gas_1= G4ThreeVector(0.,0.,0.5*CYGNO_z+10.*mm);
-    tr_CYGNO_gas_2= G4ThreeVector(0.,0.,-0.5*CYGNO_z-10.*mm);
-    //tr_CYGNO_gas_1=G4ThreeVector(TPC_x/2.-CYGNO_x/2.-50.*mm,-20.*mm,0.);
+    const G4double cathodeGap = useNominalDimensions ? 0.5*Cathode_z : 10.*mm;
+    tr_CYGNO_gas_1= G4ThreeVector(0.,0.,0.5*CYGNO_z+cathodeGap);
+    tr_CYGNO_gas_2= G4ThreeVector(0.,0.,-0.5*CYGNO_z-cathodeGap);
     CYGNO_phys = new G4PVPlacement(G4Transform3D(rot,tr_CYGNO_gas_1), CYGNO_log,"CYGNO_gas", TPC_log, false, 0, true);
-    CYGNO_phys = new G4PVPlacement(G4Transform3D(rot,tr_CYGNO_gas_2), CYGNO_log,"CYGNO_gas", TPC_log, false, 1, true);
+    CYGNO_phys = new G4PVPlacement(G4Transform3D(rot,tr_CYGNO_gas_2), CYGNO_negative_log,"CYGNO_gas", TPC_log, false, 1, true);
 
     //camera lens
     tr_camera_lens_L0 = G4ThreeVector(0.,265.*mm,-1200.*mm);
@@ -821,7 +840,9 @@ void CYGNODetectorConstruction::UpdateGeometry()
 
   //Removing sensitive detectors
   CYGNO_log->SetSensitiveDetector(0);
+  CYGNO_negative_log->SetSensitiveDetector(0);
   CYGNO_log=0;
+  CYGNO_negative_log=0;
 
   //Deleting all the solids, logical and physical objects
   //G4RunManager::GetRunManager()->ReinitializeGeometry(true);
@@ -860,6 +881,7 @@ void CYGNODetectorConstruction::UpdateGeometry()
   
   TPC_log=0;
   CYGNO_log=0;
+  CYGNO_negative_log=0;
   camera_log=0;
   camera_lens_log=0;
   Cathode_log = 0;
@@ -894,5 +916,6 @@ void CYGNODetectorConstruction::ConstructSDandField()
     = new CYGNOSensitiveDetector("cygnoSD");
   G4SDManager::GetSDMpointer()->AddNewDetector(cygnoSD);
   SetSensitiveDetector("CYGNO_log",cygnoSD);
+  SetSensitiveDetector("CYGNO_negative_log",cygnoSD);
 
 }

@@ -188,6 +188,7 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     G4LogicalVolume * cad_GemFrame_logical;
     G4LogicalVolume * TPC_log;
     G4LogicalVolume * CYGNO_log;
+    G4LogicalVolume * CYGNO_negative_log = nullptr;
     G4LogicalVolume * cad_FieldCage_logical;
     G4LogicalVolume * cad_GEM_logical;
     G4LogicalVolume * cad_InnerShieldCu_logical;
