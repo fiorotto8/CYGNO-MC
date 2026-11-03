@@ -1,130 +1,33 @@
-Guide to /CYGNO Commands in the CYGNO geant4 simulation CYGNOMC
-
-All commands begin with /CYGNO (main directory)
-
-*********************************************************************
-
-/CYGNO/lab/   Control commands for laboratory:
-
- *) /CYGNO/lab/select
-	
-	Description: Select the CYGNO laboratory geometry. 
-
-	Guidance: Possible choices are LNGS or NoCave. LNGS corresponds to the default laboratory geometry setup from LNGS. NoCave simply replace the cave with a box of air.
-
-***********************************************************************
-
-/CYGNO/shield/   Control commands for shield:
-
- *) /CYGNO/shield/select 
-
-	Description: Select the CYGNO shielding geometry. 
-
-	Guidance: Possible choices are FullShield or NoShield. Full corresponds to a shielding made of 4 nested boxes around the AirBox that contains the vessel. NoShield corresponds to a box made of Air. 
-
- The following commands are valid for the shield option "FullShield" only.
-
- *) /CYGNO/shield/thick0 
-
-	Description: Set thickness for shield layer #0; layers are numbered from 0 to 3, #0 being the outermost
-
-	Guidance: Give a number and the relative unit.
-
-	Ex. /CYGNO/shield/thick0 10. cm
-
- *) /CYGNO/shield/thick1 
-
-	Description: Set thickness for shield layer #1; layers are numbered from 0 to 3, #0 being the outermost
-
-	Guidance: see above
-
- *) /CYGNO/shield/thick2
-
-	Description: Set thickness for shield layer #2; layers are numbered from 0 to 3, #0 being the outermost
-
-	Guidance: see above
-
- *) /CYGNO/shield/thick3 
-
-	Description: Set thickness for shield layer #3; layers are numbered from 0 to 3, #0 being the outermost
-
-	Guidance: see above
-
- *) /CYGNO/shield/mat0 
-
-	Description: Set material of the CYGNO shield layer #0. 
-
-	Guidance: Possible candidates are Pb, PE, Cu, Air, Water
-
- *) /CYGNO/shield/mat1 
-
-	Description: Set material of the CYGNO shield layer #1. 
-
-	Guidance: see above
-
- *) /CYGNO/shield/mat2 
-
-	Description: Set material of the CYGNO shield layer #2. 
-
-	Guidance: see above
-
- *) /CYGNO/shield/mat3 
-
-	Description: Set material of the CYGNO shield layer #3. 
-
-	Guidance: see above
-
-*******************************************************************************************
-
-/CYGNO/gas/   Control commands for the gas:
-
- *) /CYGNO/gas/frac_He 
-
-	Description: Set the fraction of He in the CYGNO gas.  
-
-	Guidance: Fractions normalized to 1, corresponding to gas at 1 atm pressure. The gas is made of He and CF4.
-
- *) /CYGNO/gas/frac_CF4 
-	
-        Description: Set the fraction of CF4 in the CYGNO gas.  
-
-	Guidance: See above.
-
-
-********************************************************************************************
-
-Other Commands : 
-
- *) /CYGNO/updateGeo 
-
-	Description: Update detector geometry after settings
-
- *) /CYGNO/outfile 
-
-	Description: Set the output file name 
-
-	Guidance: the name should be provided without extension.
-
-	Ex. /CYGNO/outfile pippo will open an output file pippo.root
-
- *) /CYGNO/cutoutfile   
-
-	Description: Set which events are saved into the output file. 
-
-	Guidance: If 0 saves all events; if 1 (default) saves only events with energy released in the sensitive gas
-
- *) /CYGNO/save_hits_branches 
-
-	Description: Establish if the tree branches containing the hits information for each event are saved
-
-	Guidance: If 1 saves the above data; if 0 does not (default).
-
- *) /CYGNO/reportingfrequency 
-
-	Description: Set the reporting frequency
-
-	Guidance: If a number N is given, a printout is issued every N events.
-
-
-
-
+CYGNO commands — both CYGNO04 branches
+
+/CYGNO/lab/select LNGS|NoCave                 Default: NoCave
+/CYGNO/lab/externalrockthick <value> <unit>
+/CYGNO/lab/internalrockthick <value> <unit>
+/CYGNO/lab/productionlayerthick <value> <unit>
+
+/CYGNO/shield/select FullShield|NoShield
+/CYGNO/shield/thick0 <value> <unit>           Layers numbered outside to inside
+/CYGNO/shield/thick1 <value> <unit>
+/CYGNO/shield/thick2 <value> <unit>
+/CYGNO/shield/thick3 <value> <unit>
+/CYGNO/shield/mat0 <material>                Pb, PE, Cu, Air, Water or Steel
+/CYGNO/shield/mat1 <material>
+/CYGNO/shield/mat2 <material>
+/CYGNO/shield/mat3 <material>
+These commands configure analytic outer shielding, not the CAD copper shells.
+
+/CYGNO/gas/frac_He <fraction>
+/CYGNO/gas/frac_CF4 <fraction>
+Supply molar fractions summing to 1; gas is defined at 900 mbar and 293.15 K.
+
+/CYGNO/outfile <name>                       ROOT output filename
+/CYGNO/primaryGenerator/fillNtuple true|false Default: true; primary rows only
+/CYGNO/stepmax <value> <unit>                Positive charged-particle cap
+
+Primary information is stored in tree1; events with sensitive hits are stored
+in nTuple. Hit-vector columns are always created. Progress prints every 1000 events.
+For multiple primaries, tree1 describes the first primary of the first vertex.
+
+Select CAD at startup with CYGNO_GEOMETRY_PATH (see README.md).
+Legacy /CYGNO/updateGeo and /CYGNO/pathtocad remain implemented, but their runtime
+geometry-rebuild workflow is not validated for MT; UpdateGeometry is marked not MT-safe.
