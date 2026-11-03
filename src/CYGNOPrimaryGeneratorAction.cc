@@ -10,6 +10,9 @@
 #include "G4RunManager.hh"
 #include "G4Gamma.hh"
 #include "G4Event.hh"
+#include "G4PrimaryVertex.hh"
+#include "G4PrimaryParticle.hh"
+#include "G4Exception.hh"
 #include "G4ParticleTable.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
@@ -42,16 +45,19 @@ void CYGNOPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   particleGun->GeneratePrimaryVertex(anEvent);
 
   if (fFillNtuple) {
-    energy_pri = 0.;
+    // Keep one source row per event: first primary of the first vertex.
+    // GPS getters can refer to a source selected by another worker.
+    const auto* vertex = anEvent->GetPrimaryVertex(0);
+    const auto* primary = vertex ? vertex->GetPrimary(0) : nullptr;
+    if (!primary) {
+      G4Exception("CYGNOPrimaryGeneratorAction::GeneratePrimaries", "CYGNO_Primary",
+                  FatalException, "Cannot record source information: event has no primary particle.");
+      return;
+    }
+    energy_pri = primary->GetKineticEnergy();
+    const G4ThreeVector particlePosition = vertex->GetPosition();
+    const G4ThreeVector direction = primary->GetMomentumDirection();
 
-    // Access particle energy
-    energy_pri = particleGun->GetParticleEnergy();
-
-    // Access particle position
-    G4ThreeVector particlePosition = particleGun->GetParticlePosition();
-    // Sampled source unit vector before transport (one primary/event in NR macros).
-    G4ThreeVector direction = particleGun->GetParticleMomentumDirection();
-    
     //Fill ntuple #1
     G4AnalysisManager* man = G4AnalysisManager::Instance();
     man->FillNtupleDColumn(1,0,energy_pri);
