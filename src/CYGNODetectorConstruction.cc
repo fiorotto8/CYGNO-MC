@@ -474,7 +474,7 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
 
     //Cathode made of the same GEM material 
     G4Box* Cathode;
-    const G4bool useNominalDimensions = fUseV4Geometry;
+    const G4bool useNominalDimensions = !fUseCADGeometry || fUseV4Geometry;
     G4double Cathode_x = (useNominalDimensions ? 52. : 50.)*cm;
     G4double Cathode_y = (useNominalDimensions ? 82. : 80.)*cm;
     G4double Cathode_z = 60.*um;       
@@ -576,10 +576,18 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
       active_negative = make_active("CYGNO_negative_solid", -active_centre);
     } else {
       // Nominal gas envelope; the detailed PMMA cavity requires CAD mode.
-      gas_solid = new G4Box("TPC_solid", 320.*mm, 460.*mm, 530.*mm);
+      gas_solid = new G4Box("TPC_solid", (fUseCADGeometry ? 320. : 330.)*mm,
+                              460.*mm, (fUseCADGeometry ? 530. : 524.)*mm);
       active_positive = new G4Box("CYGNO_solid", CYGNO_x/2., CYGNO_y/2., CYGNO_z/2.);
       active_negative = active_positive;
 
+      if (!fUseCADGeometry) {
+        // Six placements of this foil reproduce the reviewed STL dimensions.
+        cad_GEM_solid = new G4Box("GEM_foil_solid", 509.*mm/2., 809.*mm/2., 30.*um);
+        cad_GEM_logical = new G4LogicalVolume(cad_GEM_solid,
+            CYGNOMaterials->Material("GEM"), "cad_GEM_logical");
+        cad_GEM_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Cu"));
+      }
     }
     TPC_log = new G4LogicalVolume(gas_solid,
         CYGNOMaterials->Material("CYGNO_gas"), "TPC_log", 0, 0, 0);
@@ -737,8 +745,22 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
 
     tr=G4ThreeVector(0.,0.,0.);
     rot = G4RotationMatrix();
+    Cathode_phys = new G4PVPlacement(G4Transform3D(rot,tr), Cathode_log,"Cathode", TPC_log, false, 0, true);
+    if (!fUseCADGeometry) {
+      const G4double gemThickness = 60.*um;
+      const G4double gemGap = 2.*mm;
+      int copy = 0;
+      for (const int side : {-1, 1}) {
+        for (int layer=0; layer<3; ++layer) {
+          const G4double z = side*(Cathode_z/2. + CYGNO_z
+              + gemThickness/2. + layer*(gemThickness+gemGap));
+          cad_GEM_physical = new G4PVPlacement(
+              G4Transform3D(rot,G4ThreeVector(0.,0.,z)), cad_GEM_logical,
+              "cad_GEM_physical", TPC_log, false, copy++, true);
+        }
+      }
+    }
     if (fUseCADGeometry){
-      Cathode_phys = new G4PVPlacement(G4Transform3D(rot,tr), Cathode_log,"Cathode", TPC_log, false, 0, true);
       cad_FieldCage_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
         	    cad_FieldCage_logical,"cad_FieldCage_physical", TPC_log, false, 0, true);
       if (fUseV4Geometry) {
