@@ -825,7 +825,25 @@ void CYGNODetectorConstruction::SaveMassAndDensity()
   CYGNOProperties->AddVolumeNameMassAndDensity(AirBox_log);
   CYGNOProperties->AddVolumeNameMassAndDensity(TPC_log);
   CYGNOProperties->AddVolumeNameMassAndDensity(CYGNO_log);
+  CYGNOProperties->AddVolumeNameMassAndDensity(CYGNO_negative_log);
+  // TPC_log mass alone excludes its same-material sensitive daughters.
+  const G4double totalGasMass = TPC_log->GetMass(true,false)
+      + CYGNO_log->GetMass(true,false) + CYGNO_negative_log->GetMass(true,false);
+  const G4double gasDensity = TPC_log->GetMaterial()->GetDensity();
+  CYGNOProperties->AddVolumeNameMass("TPC_total_gas_mass", totalGasMass);
+  CYGNOProperties->AddVolumeNameDensity("TPC_total_gas_dens", gasDensity);
+  G4cout << "Total chamber gas mass (kg): " << totalGasMass/kg << G4endl;
+  G4cout << "Total chamber gas volume (L): "
+         << totalGasMass/gasDensity/(1000.*cm3) << G4endl;
   CYGNOProperties->AddVolumeNameMassAndDensity(Cathode_log);
+  if (!fUseCADGeometry) {
+    // The shared analytic logical volume describes one of six physical foils.
+    const G4double gemMass = 6.*cad_GEM_logical->GetMass(true,false);
+    CYGNOProperties->AddVolumeNameMass("cad_GEM_logical_mass", gemMass);
+    CYGNOProperties->AddVolumeNameDensity("cad_GEM_logical_dens",
+        cad_GEM_logical->GetMaterial()->GetDensity());
+    G4cout << "Total GEM foil mass (kg): " << gemMass/kg << G4endl;
+  }
   CYGNOProperties->AddVolumeNameMassAndDensity(camera_log);
   CYGNOProperties->AddVolumeNameMassAndDensity(camera_lens_log);
   if (fUseCADGeometry) {
@@ -837,9 +855,9 @@ void CYGNODetectorConstruction::SaveMassAndDensity()
       CYGNOProperties->AddVolumeNameMassAndDensity(cad_GemFrame_logical);
     }
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_FieldCage_logical);
+    CYGNOProperties->AddVolumeNameMassAndDensity(cad_GEM_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_InnerShieldCu_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_OuterShieldCu_logical);
-    CYGNOProperties->AddVolumeNameMassAndDensity(cad_GEM_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_PEBase_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_PMMABox_logical);
   //  CYGNOProperties->AddVolumeNameMassAndDensity(cad_WaterShielding_logical);
