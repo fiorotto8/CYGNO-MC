@@ -18,6 +18,8 @@
 #include "G4IntersectionSolid.hh"
 #include "G4UnionSolid.hh"
 #include "G4SubtractionSolid.hh"
+#include "G4Exception.hh"
+#include <filesystem>
 
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
@@ -415,84 +417,41 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
     // ********* CYGNO volumes form CADMesh *****************************
     //**********************************************************************
     
-    char namestl[100];
-    
-    ifstream infile(CYGNOGeomPath.c_str());
-    //snprintf(namestl, sizeof(namestl), "%s/Cathode.stl", CYGNOGeomPath.c_str());
-    //G4cout << namestl << G4endl;   
-    //if (infile.good())
-    //  mesh_Cathode = CADMesh::TessellatedMesh::FromSTL(namestl);     
-    //else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-
-    snprintf(namestl, sizeof(namestl), "%s/FCSupport.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl;
-    if (infile.good()){
-           G4cout << "Memory before loading CAD: "
-              << GetMemoryUsageMB() << " MB" << G4endl;
-           mesh_FCSupport = CADMesh::TessellatedMesh::FromSTL(namestl);
-   
-   
-       G4cout << "Memory after loading CAD: "
-              << GetMemoryUsageMB() << " MB" << G4endl;
-   
-       //if (GetMemoryUsageMB() > 1000) {
-       //    G4Exception("CYGNODetectorConstruction::Construct",
-       //                "MEM-01", FatalException,
-       //                "Memory limit exceeded while constructing geometry.");
-       //}
-     }
-    else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-    
-    snprintf(namestl, sizeof(namestl), "%s/FieldCage.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl;
-    if (infile.good()){
-      mesh_FieldCage = CADMesh::TessellatedMesh::FromSTL(namestl);  
-      G4cout << "Memory after loading CAD: "
-              << GetMemoryUsageMB() << " MB" << G4endl;
-    }
-    else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-    
-    snprintf(namestl, sizeof(namestl), "%s/GEM.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl;
-    if (infile.good())
-      mesh_GEM = CADMesh::TessellatedMesh::FromSTL(namestl);
-    else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-    
-    snprintf(namestl, sizeof(namestl), "%s/GemFrame.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl;
-    if (infile.good())
-      mesh_GemFrame = CADMesh::TessellatedMesh::FromSTL(namestl); 
-    else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-    
-    snprintf(namestl, sizeof(namestl), "%s/InnerShieldCu.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl;     
-    if (infile.good())
-      mesh_InnerShieldCu = CADMesh::TessellatedMesh::FromSTL(namestl);
-    else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-
-    snprintf(namestl, sizeof(namestl), "%s/OuterShieldCu.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl;
-    if (infile.good())
-      mesh_OuterShieldCu = CADMesh::TessellatedMesh::FromSTL(namestl); 
-    else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
- 
-    snprintf(namestl, sizeof(namestl), "%s/PEBase.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl;
-    if (infile.good())
-      mesh_PEBase = CADMesh::TessellatedMesh::FromSTL(namestl); 
-    else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-    
-    snprintf(namestl, sizeof(namestl), "%s/PMMABox.stl",CYGNOGeomPath.c_str());
-    G4cout << namestl << G4endl; 
-    if (infile.good())
-      {
-	mesh_PMMABox = CADMesh::TessellatedMesh::FromSTL(namestl);
-      G4cout << "Memory after loading CAD: "
-              << GetMemoryUsageMB() << " MB" << G4endl;
+    // CAD geometry is optional, as in the original analytic-gas mode.
+    std::error_code pathError;
+    fUseCADGeometry = std::filesystem::is_directory(CYGNOGeomPath.c_str(), pathError);
+    if (fUseCADGeometry) {
+      G4cout << "Geometry mode: CAD v3 (" << CYGNOGeomPath << ")" << G4endl;
+      const std::vector<G4String> required = {"FCSupport.stl", "GemFrame.stl", "FieldCage.stl",
+          "GEM.stl", "InnerShieldCu.stl", "OuterShieldCu.stl", "PEBase.stl", "PMMABox.stl"};
+      for (const auto& filename : required) {
+        const G4String path = CYGNOGeomPath + "/" + filename;
+        if (!std::ifstream(path).good()) {
+          const G4String message = "CAD geometry directory exists, but a required mesh is missing: " + path;
+          G4Exception("CYGNODetectorConstruction::Construct", "CYGNO_CADMesh",
+                      FatalException, message.c_str());
+        }
       }
-      else G4cout << "########## WARNING: CAD geometry from "<< namestl  <<" not loaded! ##############" << G4endl;
-    
-       
+      auto loadMesh = [this](const G4String& filename) {
+        const G4String path = CYGNOGeomPath + "/" + filename;
+        G4cout << path << G4endl;
+        return CADMesh::TessellatedMesh::FromSTL(path);
+      };
+      G4cout << "Memory before loading CAD: " << GetMemoryUsageMB() << " MB" << G4endl;
+      mesh_FCSupport = loadMesh("FCSupport.stl");
+      mesh_GemFrame = loadMesh("GemFrame.stl");
+      mesh_FieldCage = loadMesh("FieldCage.stl");
+      mesh_GEM = loadMesh("GEM.stl");
+      mesh_InnerShieldCu = loadMesh("InnerShieldCu.stl");
+      mesh_OuterShieldCu = loadMesh("OuterShieldCu.stl");
+      mesh_PEBase = loadMesh("PEBase.stl");
+      mesh_PMMABox = loadMesh("PMMABox.stl");
+      G4cout << "Memory after loading CAD: " << GetMemoryUsageMB() << " MB" << G4endl;
+    } else {
+      G4cout << "Geometry mode: nominal analytic detector; CAD directory unavailable: "
+             << CYGNOGeomPath << G4endl;
+    }
+
     //Cathode made of the same GEM material 
     G4Box* Cathode;
     G4double Cathode_x = 50.*cm;
@@ -504,7 +463,7 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
     Cathode = new G4Box(name_solid,0.5*Cathode_x,0.5*Cathode_y,0.5*Cathode_z);
     Cathode_log = new G4LogicalVolume(Cathode,CYGNOMaterials->Material("GEM"),name_log,0,0,0);
 
-    if (infile.good()){
+    if (fUseCADGeometry){
     
       ////Cathode 
       //cad_Cathode_solid = mesh_Cathode->GetSolid();
@@ -671,7 +630,7 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
     rot_cad = G4RotationMatrix(0,0,0);
     rot_cad.rotateX(-90.*deg);
 
-    if (infile.good()){
+    if (fUseCADGeometry){
       cad_PEBase_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
         	    cad_PEBase_logical,"cad_PEBase_physical", AirBox_log, false, 0, true); 
       cad_InnerShieldCu_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), 
@@ -725,7 +684,7 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
 
     tr=G4ThreeVector(0.,0.,0.);
     rot = G4RotationMatrix();
-    if (infile.good()){
+    if (fUseCADGeometry){
       //cad_Cathode_physical = new G4PVPlacement(G4Transform3D(rot_cad,tr_cad), cad_Cathode_logical,"cad_Cathode_physical", TPC_log, false, 0, true);
       Cathode_phys = new G4PVPlacement(G4Transform3D(rot,tr), Cathode_log,"Cathode", TPC_log, false, 0, true);
 
@@ -791,8 +750,7 @@ void CYGNODetectorConstruction::SaveMassAndDensity()
   CYGNOProperties->AddVolumeNameMassAndDensity(Cathode_log);
   CYGNOProperties->AddVolumeNameMassAndDensity(camera_log);
   CYGNOProperties->AddVolumeNameMassAndDensity(camera_lens_log);
-  ifstream infile(CYGNOGeomPath.c_str());
-  if (infile.good()) {
+  if (fUseCADGeometry) {
     //CYGNOProperties->AddVolumeNameMassAndDensity(cad_Cathode_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_FCSupport_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_FieldCage_logical);

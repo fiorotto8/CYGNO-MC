@@ -101,6 +101,7 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
 
 
     //CADMesh
+    G4bool fUseCADGeometry = false;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_Cathode;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_FCSupport;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_FieldCage;
