@@ -474,8 +474,9 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
 
     //Cathode made of the same GEM material 
     G4Box* Cathode;
-    G4double Cathode_x = 50.*cm;
-    G4double Cathode_y = 80.*cm;
+    const G4bool useNominalDimensions = fUseV4Geometry;
+    G4double Cathode_x = (useNominalDimensions ? 52. : 50.)*cm;
+    G4double Cathode_y = (useNominalDimensions ? 82. : 80.)*cm;
     G4double Cathode_z = 60.*um;       
     name_phys="Cathode";
     name_log=name_phys+"_log";
