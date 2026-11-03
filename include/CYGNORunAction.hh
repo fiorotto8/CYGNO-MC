@@ -29,6 +29,9 @@ class CYGNORunAction : public G4UserRunAction
   CYGNORunActionMessenger* fMessenger;  
   CYGNODetectorConstruction* fDetector;
   CYGNOEventAction* fEventAction;
+  // Master has no event action; its vector columns still need valid storage.
+  std::vector<G4int> fEmptyIntVector;
+  std::vector<G4double> fEmptyDoubleVector;
   G4String FileName;
 };
 
