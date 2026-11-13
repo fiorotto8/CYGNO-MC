@@ -14,7 +14,7 @@ from config_lngs import MacrosList, NEvts, NEvtsPerJob, MaxNJobs, TAG, CODEDIR, 
 
 JobCounter=0
 
-script_template = """
+script_template = r"""
 #PBS -j oe  
 
 newgrp cygno << END
@@ -325,8 +325,11 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
     #subprocess.call(['pbs', '-q', QUEUE, '-o', log_filename, script_filename])
         #until there is no multithreading there is no reason to require 8 cores
         #subprocess.call(['qsub', '-q', 'gs', '-l', 'ncpus=8', '-d', TMPDIR, script_filename])
+    if DEBUGMODE:
+        print("debug: not submitted, macro in "+OUTDIR+'pbs_workdir/'+TAG+'/'+MACRO+Part+'.mac')
+        continue
     subprocess.call(['qsub', '-q', 'cygno',  '-d', TMPDIR, '-o', pbslog_filename, script_filename]) #It is used to write in files any prompt output produced by the bash script but it doesn't work at the moment
-    print("qsub -q cygno -d "+TMPDIR+" -o "+ pbslog_filename+" "+script_filename) 
+    print("qsub -q cygno -d "+TMPDIR+" -o "+ pbslog_filename+" "+script_filename)
 
 def main():
     #initializing random seed with the time

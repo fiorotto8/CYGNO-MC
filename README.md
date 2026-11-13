@@ -74,6 +74,26 @@ The compressed v4 geometry used in these tests was about 4.3 MB and transferred 
 ROOT files and `cygno_out.log` go to the configured storage bucket/path; download them there separately from `cygno_htc -f`.
 Check for `Geometry mode: CAD v4` in the log and the requested event count in ROOT tree `tree1`.
 
+### Many jobs (background campaigns)
+
+First prepare one macro per job with the PBS script in debug mode, which writes the macros (isotope, events, output name, random seeds) without submitting:
+
+```sh
+python3 scripts/submit_jobs_lngs.py -d -m CYGNO04_camera_lens -f CameraLensActivity.txt -e 100000 \
+  --tag CYGNO04_CameraLens --codedir . --builddir ../CYGNO-MC-build --outdir /path/to/work -t /path/to/work/tmp/
+```
+
+Then submit one CNAF job per macro; each job folder gets the macro, `CYGNO`, the geometry archive and a `run_mc.sh`, and a filled copy of `subber.sh` is sourced from `Launch/`:
+
+```sh
+scripts/submit_cnaf.sh -m /path/to/work/pbs_workdir/CYGNO04_CameraLens -s Launch/Sub_folder/subber.sh \
+  -x ../CYGNO-MC-build/CYGNO -g geo_v4.tar.gz -T From_queue/<user>/CYGNO04_CameraLens -w cnaf_jobs -k
+```
+
+`-k` only prepares the folders; check one `Launch/Sub_folder/subber_<job>.sh`, then rerun without `-k`.
+Each job uploads `<job>.root` and `<job>.log` to the bucket path given by `-T`; `-c` sets CPUs and Geant4 threads (default 2).
+Submitted jobs are listed in `cnaf_jobs/submitted.txt` and skipped on reruns; after `cygno_htc -f JOBID CEID`, `Launch/return_<job>.txt` holds the job's exit code (0 = success).
+
 ## PBS jobs
 
 `scripts/submit_jobs_lngs.py` (Python 3) submits to the `cygno` PBS queue at LNGS; site paths are in `scripts/config_lngs.py` and the worker environment is set at the top of the script.
