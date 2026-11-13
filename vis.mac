@@ -27,6 +27,13 @@
 /vis/viewer/set/autoRefresh false
 /vis/verbose errors
 #
+# Hide Boolean gas surfaces that fall back to point clouds in this viewer.
+# Visibility only: detector parts, tracking and sensitive scoring are unchanged.
+# To inspect gas with RayTracer, set these three visibility flags to true.
+/vis/geometry/set/visibility TPC_log 0 false
+/vis/geometry/set/visibility CYGNO_log 0 false
+/vis/geometry/set/visibility CYGNO_negative_log 0 false
+#
 # Draw geometry:
 /vis/drawVolume
 #
