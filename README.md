@@ -2,7 +2,7 @@
 
 Geant4 detector simulation for CYGNO.
 
-Compared with `g4v11.3_cygno04`, `master` replaces low-energy ion nuclear stopping/scattering with ZBL screened collisions and local recoil deposition, integrates the existing TRIM response per hit, and increases NR step caps, preserving option4 electronic stopping and ROOT output.
+Low-energy ion nuclear stopping/scattering uses ZBL screened collisions with local recoil deposition; the TRIM response is integrated per hit and NR step caps are increased, preserving option4 electronic stopping and ROOT output.
 
 ## Build and run
 
@@ -11,13 +11,13 @@ Requires ROOT 6 and Geant4; CADMesh 2 is bundled.
 | Tested environment | Geant4 | ROOT |
 | --- | --- | --- |
 | Local | 11.4.0 | 6.36.08 |
-| CNAF (`g4v11.3_cygno04`, v4 geometry) | 11.2.0 | 6.30.02 |
+| CNAF | 11.2.0 | 6.30.02 |
 
 Load the ROOT/Geant4 environments; set `Geant4_DIR`/`ROOT_DIR` to their CMake package directories if needed. From a common parent directory:
 
 ```sh
-git clone git@github.com:fiorotto8/CYGNO-MC.git
-git clone git@github.com:fiorotto8/geometry.git
+git clone git@github.com:CYGNUS-RD/CYGNO-MC.git
+git clone git@github.com:CYGNUS-RD/geometry.git
 cmake -S CYGNO-MC -B CYGNO-MC-build
 cmake --build CYGNO-MC-build -j
 cd CYGNO-MC-build
@@ -36,8 +36,7 @@ Isotope input examples are in `backgrounds/`.
 ## CNAF jobs
 
 Follow [mycondor: Submit job to CNAF](https://github.com/CYGNUS-RD/mycondor#submit-job-to-cnaf).
-The standard branch `g4v11.3_cygno04` (`5e777d0`) with v4 geometry passed 10- and 100-event CNAF runs, including ROOT output retrieval, without source-code changes.
-The screened nuclear-recoil transport on `master` has not yet been validated on CNAF.
+`master` with the v4 geometry has been tested on the CNAF queue, including ROOT output retrieval, without source-code changes.
 Before building, source `/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-ubuntu2204-gcc11-opt/setup.sh` to use the tested worker libraries. The tested worker image is `cygno-wn_v2.4.sif`.
 
 Copy the templates from `/cvmfs/sft-cygno.infn.it/config/templates/` into `Launch/Sub_folder/`.
