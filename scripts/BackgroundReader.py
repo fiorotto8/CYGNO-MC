@@ -2,19 +2,19 @@
 import os, subprocess, sys, time
 sys.path.append(os.path.abspath(os.path.curdir))
 
-def ReadFile(filename, filedir='/ua9/user/dimperig/CYGNO/CYGNO-MC/backgrounds'):
+def ReadFile(filename, filedir):
   d={}
   keys=[]
 
   if not os.path.isdir(filedir):
     print('ERROR: Directory %s does not exists' %(filedir))
     return
-  if not os.path.isfile(filedir+filename):
+  if not os.path.isfile(os.path.join(filedir, filename)):
     print('ERROR: File %s does not exists' %(filename))
     return
 
 
-  ref_file = open(filedir+filename)  
+  ref_file = open(os.path.join(filedir, filename))  
   for line in ref_file:
     line.strip()
     if line.startswith('#'):

@@ -24,7 +24,7 @@ cd CYGNO-MC-build
 ./CYGNO /path/to/run.mac
 ```
 
-Run `./CYGNO` for the interactive interface. Commands: [CYGNOCommandsREADME](CYGNOCommandsREADME).
+Run `./CYGNO` for the interactive interface. Commands: [CYGNOCommandsREADME.md](CYGNOCommandsREADME.md).
 The current CMake configuration forces Debug builds.
 
 ## Geometry
@@ -78,7 +78,7 @@ Check for `Geometry mode: CAD v4` in the log and the requested event count in RO
 
 `scripts/submit_jobs_lngs.py` (Python 3) submits to the `cygno` PBS queue at LNGS; site paths are in `scripts/config_lngs.py` and the worker environment is set at the top of the script.
 Each job gets a copy of the macro template with its own event count, output name and random seeds (`/random/setSeeds`).
-Basic PBS commands: https://www.bo.infn.it/alice/introgrd/pbsabout/node17.html
+Basic PBS commands: <https://www.bo.infn.it/alice/introgrd/pbsabout/node17.html>
 
 Split 100M events into 100 jobs:
 

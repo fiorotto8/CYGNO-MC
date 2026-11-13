@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.curdir))
 
 import BackgroundReader
 
-from config_lngs import MacrosList, NEvts, MaxNJobs, TAG, GEANT4VERSION, GEANT4CONFIG, ROOTCONFIG, QUEUE, CODEDIR, OUTDIR, PBSOUTDIR, TMPDIR, MATERIALS, BUILDDIR
+from config_lngs import MacrosList, NEvts, NEvtsPerJob, MaxNJobs, TAG, CODEDIR, OUTDIR, PBSOUTDIR, TMPDIR, MATERIALS, BUILDDIR
 
 #############################################################################################
 ## THE CODE BELOW SHOULD NOT BE TOUCHED. IF YOU FIND BUGS PLEASE EMAIL THE SIMULATION GROUP##
@@ -297,9 +297,6 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
     kw['MACRO']=MACRO+Part
     kw['TMPDIR']=TMPDIR
 
-    kw['GEANT4VERSION']=GEANT4VERSION
-    kw['GEANT4CONFIG']=GEANT4CONFIG
-    kw['ROOTCONFIG']=ROOTCONFIG
     kw['BUILDDIR']=BUILDDIR
 
     script_filename = OUTDIR+'pbs_workdir/'+TAG+'/'+MACRO+Part+'.sh'
