@@ -35,12 +35,18 @@ TMPDIR=%(TMPDIR)s
 mkdir -p ${WORKDIR}
 rm -rf ${WORKDIR}/*
 
-## root
-source /nfs/cygno/software/root-v6-18-04-install/bin/thisroot.sh
+#root
+source /nfs/cygno/software/root-v6-22-02-py38-install/bin/thisroot.sh
+#python3.8
+export PYTHONPATH=$PYTHONPATH:/home/$USER/.local/lib/python3.8/site-packages/ 
 ## geant
-source /nfs/cygno/software/geant4-v10.5.1-install/bin/geant4.sh
+#source /nfs/cygno/software/geant4-v10.5.1-cygno-install/bin/geant4.sh
+#source /nfs/cygno/software/geant4-v11.3.1-install/bin/geant4.sh
+source /nfs/cygno/software/geant4-v11.5.0.beta.patch-install/bin/geant4.sh
+
 ## cadmesh
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nfs/cygno/software/CADMesh-v1.1-install/lib
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nfs/cygno/software/CADMesh-v1.1-cygno-install/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nfs/cygno/software/CADMesh2
 
 
 ## enter workdir
@@ -55,7 +61,7 @@ cp ${WORKDIR}/${MACRONAME}.root ${OUTDIR}/${PBSOUTDIR}${TAG}/
 cp ${TMPDIR}/${TAG}/pbslog_${MACRONAME}.log ${OUTDIR}/pbs_logs/${TAG}/
 cd ${OUTDIR}
 rm -rf ${WORKDIR}/
-#rm -f ${TMPDIR}/${TAG}/*
+rm -f ${TMPDIR}/${TAG}/*
 """
 EOFmessage='The simulation took:' #This must be one of the last messages in output in the log file. It is used to check if the log file is complete or not
 
@@ -98,13 +104,13 @@ def query_yes_no():
     yes = set(['yes','y'])
     no = set(['no','n'])
 
-    choice = raw_input().lower()
+    choice = input().lower()
     if choice in yes:
         return True
     elif choice in no:
         return False
     else:
-        print 'Please respond with yes or no'
+        print('Please respond with yes or no')
         query_yes_no()
 
 def ModifyMacro(name=CODEDIR+'/macro/RadioactiveDecayTEMPLATE.mac', newname=CODEDIR+'/macro/RadioactiveDecayTEMPLATEOUT.mac', changes={}):
@@ -112,47 +118,47 @@ def ModifyMacro(name=CODEDIR+'/macro/RadioactiveDecayTEMPLATE.mac', newname=CODE
     new_file = open(newname,'w')
     old_file = open(name)
     for line in old_file:
-      line.strip()
-      elements=line.split()
-      if len(elements)==0:
-	continue
-      #setting outname equal to macro name
-      if line.split()[0]=='/CYGNO/outfile' and 'Outname' in changes.keys():
-        line=line.replace(elements[-1],changes['Outname'])
-      elif line.split()[0]=='/run/beamOn' and 'NEvs' in changes.keys():
-        line=line.replace(elements[-1],changes['NEvs'])
-      elif line.split()[0]=='/gps/ion' and 'A' in changes.keys() and 'Z' in changes.keys():
-        if 'IonicCharge' in changes.keys() and 'ExcitationEnergy[keV]' in changes.keys():
-            line='/gps/ion %s %s %s %s\n'%(changes['Z'],changes['A'],changes['IonicCharge'],changes['ExcitationEnergy[keV]'])
-        else:
-            line='/gps/ion %s %s\n'%(changes['Z'],changes['A'])
-        ##Note the 1 option in replace. In the unlucky case that the placeholder for A and Z has the same value this replacement prevent that both elements are replaced with A A or Z Z
-        #line=line.replace(elements[-2],changes['Z'],1)
-        #line=line.replace(elements[-1],changes['A'],1)
-      elif line.split()[0]=='/gps/pos/confine' and 'SourcePos' in changes.keys():
-        line=line.replace(elements[-1],changes['SourcePos'])
-      elif line.split()[0]=='/CYGNO/shield/thick0' and 'thick0' in changes.keys():
-        line=line.replace(elements[-2],changes['thick0'])
-      elif line.split()[0]=='/CYGNO/shield/thick1' and 'thick1' in changes.keys():
-        line=line.replace(elements[-2],changes['thick1'])
-      elif line.split()[0]=='/CYGNO/shield/thick2' and 'thick2' in changes.keys():
-        line=line.replace(elements[-2],changes['thick2'])
-      elif line.split()[0]=='/CYGNO/shield/thick3' and 'thick3' in changes.keys():
-        line=line.replace(elements[-2],changes['thick3'])
-      elif line.split()[0]=='/CYGNO/shield/mat0' and 'mat0' in changes.keys():
-        line=line.replace(elements[-1],changes['mat0'])
-      elif line.split()[0]=='/CYGNO/shield/mat1' and 'mat1' in changes.keys():
-        line=line.replace(elements[-1],changes['mat1'])
-      elif line.split()[0]=='/CYGNO/shield/mat2' and 'mat2' in changes.keys():
-        line=line.replace(elements[-1],changes['mat2'])
-      elif line.split()[0]=='/CYGNO/shield/mat3' and 'mat3' in changes.keys():
-        line=line.replace(elements[-1],changes['mat3'])
-      elif line.split()[0]=='/random/setSeeds':
-        seed1=int(random.random()*1000000000)
-        seed2=int(random.random()*1000000000)
-        line=line.replace(elements[-2],str(seed1))
-        line=line.replace(elements[-1],str(seed2))
-      new_file.write(line)
+        line.strip()
+        elements=line.split()
+        if len(elements)==0:
+            continue
+        #setting outname equal to macro name
+        if line.split()[0]=='/CYGNO/outfile' and 'Outname' in changes.keys():
+            line=line.replace(elements[-1],changes['Outname'])
+        elif line.split()[0]=='/run/beamOn' and 'NEvs' in changes.keys():
+            line=line.replace(elements[-1],changes['NEvs'])
+        elif line.split()[0]=='/gps/ion' and 'A' in changes.keys() and 'Z' in changes.keys():
+            if 'IonicCharge' in changes.keys() and 'ExcitationEnergy[keV]' in changes.keys():
+                line='/gps/ion %s %s %s %s\n'%(changes['Z'],changes['A'],changes['IonicCharge'],changes['ExcitationEnergy[keV]'])
+            else:
+                line='/gps/ion %s %s\n'%(changes['Z'],changes['A'])
+          ##Note the 1 option in replace. In the unlucky case that the placeholder for A and Z has the same value this replacement prevent that both elements are replaced with A A or Z Z
+          #line=line.replace(elements[-2],changes['Z'],1)
+          #line=line.replace(elements[-1],changes['A'],1)
+        elif line.split()[0]=='/gps/pos/confine' and 'SourcePos' in changes.keys():
+            line=line.replace(elements[-1],changes['SourcePos'])
+        elif line.split()[0]=='/CYGNO/shield/thick0' and 'thick0' in changes.keys():
+            line=line.replace(elements[-2],changes['thick0'])
+        elif line.split()[0]=='/CYGNO/shield/thick1' and 'thick1' in changes.keys():
+            line=line.replace(elements[-2],changes['thick1'])
+        elif line.split()[0]=='/CYGNO/shield/thick2' and 'thick2' in changes.keys():
+            line=line.replace(elements[-2],changes['thick2'])
+        elif line.split()[0]=='/CYGNO/shield/thick3' and 'thick3' in changes.keys():
+            line=line.replace(elements[-2],changes['thick3'])
+        elif line.split()[0]=='/CYGNO/shield/mat0' and 'mat0' in changes.keys():
+            line=line.replace(elements[-1],changes['mat0'])
+        elif line.split()[0]=='/CYGNO/shield/mat1' and 'mat1' in changes.keys():
+            line=line.replace(elements[-1],changes['mat1'])
+        elif line.split()[0]=='/CYGNO/shield/mat2' and 'mat2' in changes.keys():
+            line=line.replace(elements[-1],changes['mat2'])
+        elif line.split()[0]=='/CYGNO/shield/mat3' and 'mat3' in changes.keys():
+            line=line.replace(elements[-1],changes['mat3'])
+        elif line.split()[0]=='/random/setSeeds':
+            seed1=int(random.random()*1000000000)
+            seed2=int(random.random()*1000000000)
+            line=line.replace(elements[-2],str(seed1))
+            line=line.replace(elements[-1],str(seed2))
+        new_file.write(line)
     new_file.close()
     old_file.close()
 
@@ -180,7 +186,7 @@ def GetGeometry(NGeo='1'):
         '250Water2SS5Cu':{'thick0':'1.'  ,'thick1':'250'  ,'thick2':'2.'   ,'thick3':'5.'  ,'mat0':'Air'  ,'mat1':'Water'  ,'mat2':'Steel'     ,'mat3':'Cu'}
     }
     if NGeo not in geos.keys():
-        print 'The geometry specified ( %s ) is not defined'%(NGeo)
+        print('The geometry specified ( %s ) is not defined'%(NGeo))
         sys.exit()
     return geos[NGeo]
 
@@ -188,16 +194,16 @@ def GetMaterial(filename):
     for m in MATERIALS:
         if filename.startswith(m):            
             return m, MATERIALS[m]
-    print 'WARNING! The file name %s does not match any of the materials listed in MATERIALS. Looking for the keyword Activity ...'%(filename)
+    print('WARNING! The file name %s does not match any of the materials listed in MATERIALS. Looking for the keyword Activity ...'%(filename))
     if 'Activity' in filename:
         return filename[:filename.find('Activity')],''
-    print 'ERROR! The material could not be extracted from the name of the file: %s \n Please add the material to the list or place it in the name of the file followed by the keyword Activity'%(filename)
+    print('ERROR! The material could not be extracted from the name of the file: %s \n Please add the material to the list or place it in the name of the file followed by the keyword Activity'%(filename))
     sys.exit()
 
 def GetSourcePosition(geometry,g4mat):
     pos=[]
     if g4mat == '':            
-        print 'ERROR! Cannot determine the position of the source because the material is not defined'
+        print('ERROR! Cannot determine the position of the source because the material is not defined')
         sys.exit()
     for g in geometry:
         if 'mat' in g and geometry[g]==g4mat:
@@ -207,8 +213,8 @@ def GetSourcePosition(geometry,g4mat):
 def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEMPLATE', NEvents='10000', changes={}):
   #create a macro 'MACRO' which is a modified copy of 'TEMPLATE' with a total number of events 'NEvents' and other changes
   global JobCounter
-  print '############################################################################################################################################################################################'
-  print MACRO
+  print('############################################################################################################################################################################################')
+  print(MACRO)
   options = parseInputArgs()
 
   DEBUGMODE=False
@@ -216,15 +222,15 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
     DEBUGMODE=True
   
   NParts=1#number of jobs used to process all the events
-  if int(NEvents)/int(NEvtsPerJob)>0:
-    NParts=int(NEvents)/int(NEvtsPerJob)
+  if int(NEvents)//int(NEvtsPerJob)>0:
+    NParts=int(NEvents)//int(NEvtsPerJob)
     if int(NEvents)%int(NEvtsPerJob)>0:
       NParts+=1
   if NParts>MaxNJobs-JobCounter:
-      print 'Cannot submit more jobs because the max number of jobs would be reached'
+      print('Cannot submit more jobs because the max number of jobs would be reached')
       return
-  print 'number of parts the job is divided: ', NParts
-  for p in range(0,NParts):
+  print('number of parts the job is divided: ', NParts)
+  for p in range(0,int(NParts)):
     if NParts==1:
       NEvs=NEvents
       Part=''
@@ -234,7 +240,7 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
     else:
       NEvs=NEvtsPerJob
       Part='_part'+str(p)
-    print 'Events for part %s are %s'%(Part, NEvs)
+    print('Events for part %s are %s'%(Part, NEvs))
 
     if options.retry:
         #Checking if the output and log exists
@@ -242,8 +248,8 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
             continue
         #Checking for outputs without log files
         if not os.path.isfile(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log') and os.path.isfile(OUTDIR+PBSOUTDIR+TAG+'/'+MACRO+Part+'.root'):
-            print 'Cannot find the log: %s' %(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log')
-            print 'But the output file exists anyway, so nothing is done'
+            print('Cannot find the log: %s' %(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log'))
+            print('But the output file exists anyway, so nothing is done')
             continue
         #Checking for jobs without output file
         if os.path.isfile(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log') and not os.path.isfile(OUTDIR+PBSOUTDIR+TAG+'/'+MACRO+Part+'.root'):
@@ -258,20 +264,20 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
                     iserror=True
                     break
             if iscomplete:
-                print 'Log file %s is complete: waiting 5s to see if an output appears' %(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log') 
+                print('Log file %s is complete: waiting 5s to see if an output appears' %(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log')) 
                 wait=0
                 while not os.path.isfile(OUTDIR+PBSOUTDIR+TAG+'/'+MACRO+Part+'.root') and wait<5:
                     time.sleep(1)
                     wait+=1
                 if os.path.isfile(OUTDIR+PBSOUTDIR+TAG+'/'+MACRO+Part+'.root'):
-                    print 'Output has been generated and the job will not be resubmitted'
+                    print('Output has been generated and the job will not be resubmitted')
                     continue
                 else:
-                    print 'Resubmitting the job because no output has been found'
+                    print('Resubmitting the job because no output has been found')
             elif iserror:
-                print 'Found error in logfile. Resubmitting the job because no output has been found'
+                print('Found error in logfile. Resubmitting the job because no output has been found')
             else:
-                print 'The log file %s seems incomplete. The jobs is probably still running and will not be resubmitted.' %(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log')
+                print('The log file %s seems incomplete. The jobs is probably still running and will not be resubmitted.' %(OUTDIR+'pbs_logs/'+TAG+'/'+MACRO+Part+'.log'))
                 continue
                 #print 'Resubmitting the job because no output has been found'
 
@@ -314,13 +320,13 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
     #subprocess.call(['pbs', '-q', QUEUE, '-o', log_filename, script_filename])
         #until there is no multithreading there is no reason to require 8 cores
         #subprocess.call(['qsub', '-q', 'gs', '-l', 'ncpus=8', '-d', TMPDIR, script_filename])
-    subprocess.call(['qsub', '-d', TMPDIR, '-o', pbslog_filename, script_filename]) #It is used to write in files any prompt output produced by the bash script but it doesn't work at the moment
-    print "qsub -d "+TMPDIR+" -o "+ pbslog_filename+" "+script_filename 
+    subprocess.call(['qsub', '-q', 'cygno',  '-d', TMPDIR, '-o', pbslog_filename, script_filename]) #It is used to write in files any prompt output produced by the bash script but it doesn't work at the moment
+    print("qsub -q cygno -d "+TMPDIR+" -o "+ pbslog_filename+" "+script_filename) 
 
 def main():
     #initializing random seed with the time
     random.seed()
-    print "starting the job submission with pbs..."   
+    print("starting the job submission with pbs..."  ) 
  
     #to modify the global variables
     global MacrosList
@@ -343,16 +349,16 @@ def main():
     if not OUTDIR.endswith('/'):
         OUTDIR=OUTDIR+'/'
     if not os.path.isdir(CODEDIR):
-        print 'ERROR: Code directory does not exist or is not found'
+        print('ERROR: Code directory does not exist or is not found')
         return
     if not os.path.isdir(OUTDIR):
-        print 'ERROR: Output directory does not exist or is not found'
+        print('ERROR: Output directory does not exist or is not found')
         return
     
     if options.builddir:
         BUILDDIR=options.builddir
     if not os.path.isdir(BUILDDIR):
-        print 'ERROR: Build directory does not exist or is not found'
+        print('ERROR: Build directory does not exist or is not found')
         return
 
     if options.tmpdir:
@@ -367,25 +373,26 @@ def main():
         MacrosList=[]
         for m in options.macro.split(','):
             MacrosList.append(m.strip())
+
     if options.nevts:
         if options.file:
-            print 'Argument --nevts will be ignored because the number of events is read from file'
+            print ('Argument --nevts will be ignored because the number of events is read from file')
         else:
             NEvts=[]
             for n in options.nevts.split(','):
                 if not n.strip().isdigit():
-                    print 'nevts is not a list of integers!!'
+                    print('nevts is not a list of integers!!')
                     return
                 NEvts.append(n.strip())
             if len(MacrosList)!=len(NEvts):
-                print 'ERROR: size of macro list '+str(len(MacrosList))+' is different than size of nevents list '+str(len(NEvts))
+                print('ERROR: size of macro list '+str(len(MacrosList))+' is different than size of nevents list '+str(len(NEvts)))
                 return
 
     #The full shielding geometry can be red from file
     geometry={}
     if options.geo:
         geometry=GetGeometry(options.geo)
-        print geometry
+        print(geometry)
     #Getting the source, the number of events, the activity from the file
     sources={}
     if options.file:
@@ -419,14 +426,14 @@ def main():
 
     #security checks
     if os.path.isdir(OUTDIR+'pbs_logs/'+TAG) and not options.retry:
-        print 'You are about to submit jobs for a TAG that has already been used. You could overwrite previous results or you could conflict with running jobs. If you want to resubmit jobs failed or not queued yet, use the option --retry. Do you want to proceed with submitting all the jobs for this tag? [y/n]'
+        print('You are about to submit jobs for a TAG that has already been used. You could overwrite previous results or you could conflict with running jobs. If you want to resubmit jobs failed or not queued yet, use the option --retry. Do you want to proceed with submitting all the jobs for this tag? [y/n]')
         if not query_yes_no():
-            print 'Aborted'
+            print('Aborted')
             sys.exit()
     elif options.retry:
-        print 'You are about to resubmit the failed jobs for this TAG. Please be sure there are no jobs with this TAG submitted but not running yet, otherwise they will be duplicated. Proceed? [y/n]'
+        print('You are about to resubmit the failed jobs for this TAG. Please be sure there are no jobs with this TAG submitted but not running yet, otherwise they will be duplicated. Proceed? [y/n]')
         if not query_yes_no():
-            print 'Aborted'
+            print('Aborted')
             sys.exit()
 
     try:
@@ -440,11 +447,11 @@ def main():
 
     hostname = socket.gethostname()
 
-    print 'Tag name: ',TAG
+    print('Tag name: ',TAG)
 
     #mode 3 and 3.1: 1 activity file, 1 geometry and one template. This can work even without geometry (3.1). Soemtimes you have a geometry defined in your macro that you don't want to change, but still run the configuration from the file. And you also don't want to change the position of the source. What you want to change is just the isotope and the number of events per isotope generated.
     if options.geo and options.file and options.macro and len(MacrosList)==1:
-        print 'Executing the simulation using the template: ',MacrosList[0]
+        print('Executing the simulation using the template: ',MacrosList[0])
         print ("Option geo + bkg file + macro")
         #for p in pos:
         #    print p
@@ -461,10 +468,10 @@ def main():
             #changes['SourcePos']=p
             for g in geometry:
                 changes[g]=geometry[g]
-                print changes[g] 
+                print(changes[g] )
             SubmitJob(MACRO, MacrosList[0], sources['NEvents'][i],changes)
     elif options.file and options.macro and len(MacrosList)==1:
-        print 'Executing the simulation using the template: ',MacrosList[0]
+        print ('Executing the simulation using the template: ',MacrosList[0])
         for i in range(0,len(sources['Name'])):
             MACRO=mat+'_'+sources['Name'][i]
             changes={}
@@ -481,7 +488,7 @@ def main():
 
     elif options.geo:
         if len(MacrosList)!=len(NEvts):
-            print 'ERROR: size of macro list '+str(len(MacrosList))+' is different than size of nevents list '+str(len(NEvts))
+            print('ERROR: size of macro list '+str(len(MacrosList))+' is different than size of nevents list '+str(len(NEvts)))
             return
         for i in range(0,len(MacrosList)):
             TEMPLATEMACRO = MacrosList[i]
@@ -490,11 +497,11 @@ def main():
             changes={}
             for g in geometry:
                 changes[g]=geometry[g]
-                print changes[g] 
+                print (changes[g] )
             SubmitJob(MACRO, TEMPLATEMACRO, NEvts[i],changes)
     else:
         if len(MacrosList)!=len(NEvts):
-            print 'ERROR: size of macro list '+str(len(MacrosList))+' is different than size of nevents list '+str(len(NEvts))
+            print ('ERROR: size of macro list '+str(len(MacrosList))+' is different than size of nevents list '+str(len(NEvts)))
             return
         for i in range(0,len(MacrosList)):
             MACRO=MacrosList[i]

@@ -76,20 +76,14 @@ Check for `Geometry mode: CAD v4` in the log and the requested event count in RO
 
 ## PBS jobs
 
-PBS queues remain supported through the scripts in `scripts/`; the examples target the roma3 cluster.
+`scripts/submit_jobs_lngs.py` (Python 3) submits to the `cygno` PBS queue at LNGS; site paths are in `scripts/config_lngs.py` and the worker environment is set at the top of the script.
+Each job gets a copy of the macro template with its own event count, output name and random seeds (`/random/setSeeds`).
 Basic PBS commands: https://www.bo.infn.it/alice/introgrd/pbsabout/node17.html
-
-Submit a single job and check its status:
-
-```sh
-qsub scripts/examplejob.sh
-qstat -u $USER
-```
 
 Split 100M events into 100 jobs:
 
 ```sh
-python scripts/submit_jobs_lngs.py -m CYGNOtest_surface_gamma --tag ext_gamma -n 100000000 -e 1000000 --builddir ../CYGNO-MC-build/ --outdir ./
+python3 scripts/submit_jobs_lngs.py -m CYGNOtest_surface_gamma --tag ext_gamma -n 100000000 -e 1000000 --builddir ../CYGNO-MC-build/ --outdir ./
 ```
 
 * `-m` macro template in `macro/`, without the `.mac` extension
@@ -100,11 +94,14 @@ python scripts/submit_jobs_lngs.py -m CYGNOtest_surface_gamma --tag ext_gamma -n
 * `--outdir` output path
 
 Output is saved in `<outdir>/pbs_outputs/<tag>`; per-job logs and macro copies go in `pbs_logs/` and `pbs_workdir/`.
+Use `--retry` with the same tag to resubmit jobs whose output is missing.
 
-Submit several radioactive isotopes from one configuration file:
+Submit one job set per isotope from a list, e.g. the camera lens radioactivity; each isotope's NEvents is split into jobs of `-e` events:
 
 ```sh
-python scripts/submit_jobs_rm3.py -m CYGNOtest --tag PbShieldRadioactivity -f U238Activity_Shield2Pb_10Pb2Cu.txt -e 1000000 --builddir ../CYGNO-MC-build/
+python3 scripts/submit_jobs_lngs.py -m CYGNO04_camera_lens --tag CYGNO04_CameraLens -f CameraLensActivity.txt -e 100000 --builddir ../CYGNO-MC-build/
 ```
 
-`-f` names a file in `backgrounds/` with columns Name, Z, A, NEvents; `-n` is then ignored.
+`-f` names a file in `backgrounds/` with columns Name, Z, A, NEvents (optionally IonicCharge and ExcitationEnergy[keV] before NEvents, for metastable states); `-n` is then ignored.
+Its name must start with a material key of `MATERIALS` in `config_lngs.py` or contain `Activity`; the prefix names the outputs.
+The template sets the source volume with `/gps/pos/confine`; `/gps/ion`, `/run/beamOn`, `/CYGNO/outfile` and `/random/setSeeds` are rewritten per job.
