@@ -190,6 +190,14 @@ def GetGeometry(NGeo='1'):
         sys.exit()
     return geos[NGeo]
 
+def IsotopeChanges(sources, i):
+    """Macro changes selecting isotope i of an isotope list (/gps/ion Z A [Q E])."""
+    changes={'A':sources['A'][i], 'Z':sources['Z'][i]}
+    for key in ('IonicCharge','ExcitationEnergy[keV]'):
+        if key in sources.keys():
+            changes[key]=sources[key][i]
+    return changes
+
 def GetMaterial(filename):
     for m in MATERIALS:
         if filename.startswith(m):            
@@ -453,16 +461,8 @@ def main():
         #for p in pos:
         #    print p
         for i in range(0,len(sources['Name'])):
-            #MACRO='Geo'+options.geo+'_'+mat+'_'+p+'_'+sources['Name'][i]
             MACRO='Geo'+options.geo+'_'+mat+'_'+sources['Name'][i]
-            changes={}
-            changes['A']=sources['A'][i]
-            changes['Z']=sources['Z'][i]
-            if 'IonicCharge' in sources.keys():
-                changes['IonicCharge']=sources['IonicCharge'][i]
-            if 'ExcitationEnergy[keV]' in sources.keys():
-                changes['ExcitationEnergy[keV]']=sources['ExcitationEnergy[keV]'][i]
-            #changes['SourcePos']=p
+            changes=IsotopeChanges(sources,i)
             for g in geometry:
                 changes[g]=geometry[g]
                 print(changes[g] )
@@ -470,17 +470,11 @@ def main():
     elif options.file and options.macro and len(MacrosList)==1:
         print ('Executing the simulation using the template: ',MacrosList[0])
         for i in range(0,len(sources['Name'])):
-            MACRO=mat+'_'+sources['Name'][i]
-            changes={}
-            changes['A']=sources['A'][i]
-            changes['Z']=sources['Z'][i]
-            if 'IonicCharge' in sources.keys():
-                changes['IonicCharge']=sources['IonicCharge'][i]
-            if 'ExcitationEnergy[keV]' in sources.keys():
-                changes['ExcitationEnergy[keV]']=sources['ExcitationEnergy[keV]'][i]
-            SubmitJob(MACRO, MacrosList[0], sources['NEvents'][i],changes)                
-    #elif options.confine:
-    #NEED TO ADD THIS OPTION
+            changes=IsotopeChanges(sources,i)
+            # NOTE: -k/--confine is not applied in this mode; the template's /gps/pos/confine is used.
+            # To support it, submit once per volume in `pos` with changes['SourcePos'] set and the
+            # volume in the job name (ModifyMacro rewrites /gps/pos/confine when 'SourcePos' is set).
+            SubmitJob(mat+'_'+sources['Name'][i], MacrosList[0], sources['NEvents'][i], changes)
     #mode 4: 1 geometry to be changed in the list of files
 
     elif options.geo:
