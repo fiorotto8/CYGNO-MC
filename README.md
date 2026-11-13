@@ -2,7 +2,7 @@
 
 Geant4 detector simulation for CYGNO.
 
-Compared with `g4v11.3_cygno04`, this branch replaces low-energy ion nuclear stopping/scattering with ZBL screened collisions and local recoil deposition, integrates the existing TRIM response per hit, and increases NR step caps, preserving option4 electronic stopping and ROOT output.
+Compared with `g4v11.3_cygno04`, `master` replaces low-energy ion nuclear stopping/scattering with ZBL screened collisions and local recoil deposition, integrates the existing TRIM response per hit, and increases NR step caps, preserving option4 electronic stopping and ROOT output.
 
 ## Build and run
 
@@ -16,7 +16,7 @@ Requires ROOT 6 and Geant4; CADMesh 2 is bundled.
 Load the ROOT/Geant4 environments; set `Geant4_DIR`/`ROOT_DIR` to their CMake package directories if needed. From a common parent directory:
 
 ```sh
-git clone --branch g4v11.3_cygno04_screening git@github.com:fiorotto8/CYGNO-MC.git
+git clone git@github.com:fiorotto8/CYGNO-MC.git
 git clone git@github.com:fiorotto8/geometry.git
 cmake -S CYGNO-MC -B CYGNO-MC-build
 cmake --build CYGNO-MC-build -j
@@ -37,7 +37,7 @@ Isotope input examples are in `backgrounds/`.
 
 Follow [mycondor: Submit job to CNAF](https://github.com/CYGNUS-RD/mycondor#submit-job-to-cnaf).
 The standard branch `g4v11.3_cygno04` (`5e777d0`) with v4 geometry passed 10- and 100-event CNAF runs, including ROOT output retrieval, without source-code changes.
-This screening branch has not yet been validated on CNAF.
+The screened nuclear-recoil transport on `master` has not yet been validated on CNAF.
 Before building, source `/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-ubuntu2204-gcc11-opt/setup.sh` to use the tested worker libraries. The tested worker image is `cygno-wn_v2.4.sif`.
 
 Copy the templates from `/cvmfs/sft-cygno.infn.it/config/templates/` into `Launch/Sub_folder/`.
@@ -74,3 +74,38 @@ cygno_htc -f JOBID CEID
 The compressed v4 geometry used in these tests was about 4.3 MB and transferred successfully with the job inputs.
 ROOT files and `cygno_out.log` go to the configured storage bucket/path; download them there separately from `cygno_htc -f`.
 Check for `Geometry mode: CAD v4` in the log and the requested event count in ROOT tree `tree1`.
+
+## PBS jobs
+
+PBS queues remain supported through the scripts in `scripts/`; the examples target the roma3 cluster.
+Basic PBS commands: https://www.bo.infn.it/alice/introgrd/pbsabout/node17.html
+
+Submit a single job and check its status:
+
+```sh
+qsub scripts/examplejob.sh
+qstat -u $USER
+```
+
+Split 100M events into 100 jobs:
+
+```sh
+python scripts/submit_jobs_lngs.py -m CYGNOtest_surface_gamma --tag ext_gamma -n 100000000 -e 1000000 --builddir ../CYGNO-MC-build/ --outdir ./
+```
+
+* `-m` macro template in `macro/`, without the `.mac` extension
+* `-n` total number of events
+* `-e` events per job
+* `--tag` simulation tag; outputs go in a directory with this name
+* `--builddir` directory containing the `CYGNO` executable
+* `--outdir` output path
+
+Output is saved in `<outdir>/pbs_outputs/<tag>`; per-job logs and macro copies go in `pbs_logs/` and `pbs_workdir/`.
+
+Submit several radioactive isotopes from one configuration file:
+
+```sh
+python scripts/submit_jobs_rm3.py -m CYGNOtest --tag PbShieldRadioactivity -f U238Activity_Shield2Pb_10Pb2Cu.txt -e 1000000 --builddir ../CYGNO-MC-build/
+```
+
+`-f` names a file in `backgrounds/` with columns Name, Z, A, NEvents; `-n` is then ignored.
