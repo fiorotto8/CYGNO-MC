@@ -1,5 +1,4 @@
 #include "CYGNODetectorLNGS.hh"
-#include "CYGNODetectorLNGSMessenger.hh"
 
 #include "G4VisAttributes.hh"
 #include "G4PhysicalConstants.hh"
@@ -43,7 +42,6 @@ CYGNODetectorLNGS::CYGNODetectorLNGS() :
   productionLayerThickness(40.*cm)
 {
 
-  fMessenger = new CYGNODetectorLNGSMessenger(this);
 
   Construct();
   
@@ -51,7 +49,6 @@ CYGNODetectorLNGS::CYGNODetectorLNGS() :
 
 CYGNODetectorLNGS::~CYGNODetectorLNGS()
 {
-  delete fMessenger;
 }
 
 CYGNODetectorLNGS* CYGNODetectorLNGS::GetInstance()

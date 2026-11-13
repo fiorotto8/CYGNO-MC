@@ -8,7 +8,6 @@
 #include "G4RotationMatrix.hh"
 #include "CYGNODetectorMaterial.hh"
 
-class CYGNODetectorLNGSMessenger;
 
 class CYGNODetectorLNGS
 {
@@ -55,7 +54,6 @@ public:
 
 private:
 
-  CYGNODetectorLNGSMessenger* fMessenger;
 
   G4LogicalVolume* Rock_log;
   G4ThreeVector size_Rock;
