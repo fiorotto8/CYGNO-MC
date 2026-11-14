@@ -2,7 +2,8 @@
 
 Geant4 detector simulation for CYGNO.
 
-Low-energy ion nuclear stopping/scattering uses ZBL screened collisions with local recoil deposition; the TRIM response is integrated per hit and NR step caps are increased, preserving option4 electronic stopping and ROOT output.
+Physics: EM option4 electronic stopping; low-energy ions add ZBL-screened nuclear scattering (`external/TestEm7`) with local recoil deposition, and nuclear-recoil hits get an SRIM/TRIM quenching factor.
+Notes: [screening](docs/cygno04_screening_technical_note.pdf), [TRIM comparison](docs/cygno_mc_trim_comparison.pdf).
 
 ## Build and run
 
@@ -30,13 +31,14 @@ The current CMake configuration forces Debug builds.
 ## Geometry
 
 Default: `../geometry/cygno04_v4_ASCII/`. Missing CAD uses the nominal analytic detector; incomplete CAD reports an error.
+v4 includes the 16 PMTs and sockets (`cad_PMT_physical`, `cad_PMTSocket_physical`); their materials are placeholders (solid borosilicate glass) until the real masses are known.
 Select legacy v3 with `CYGNO_GEOMETRY_PATH=../geometry/cygno_04_v3_ASCII ./CYGNO run.mac`.
 Isotope input examples are in `backgrounds/`.
 
 ## CNAF jobs
 
 Follow [mycondor: Submit job to CNAF](https://github.com/CYGNUS-RD/mycondor#submit-job-to-cnaf).
-`master` with the v4 geometry has been tested on the CNAF queue, including ROOT output retrieval, without source-code changes. That test predates the PMT, socket and PMMA-window geometry.
+This workflow was tested on the CNAF queue with the v4 geometry, including ROOT output retrieval, before the PMT, socket and PMMA-window update.
 Before building, source `/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-ubuntu2204-gcc11-opt/setup.sh` to use the tested worker libraries. The tested worker image is `cygno-wn_v2.4.sif`.
 
 Copy the templates from `/cvmfs/sft-cygno.infn.it/config/templates/` into `Launch/Sub_folder/`.
@@ -70,7 +72,7 @@ cygno_htc -q
 cygno_htc -f JOBID CEID
 ```
 
-The compressed v4 geometry used in these tests was about 4.3 MB and transferred successfully with the job inputs. With the PMTs, sockets and PMMA windows it is about 6.1 MB.
+The compressed v4 geometry (about 6.1 MB; 4.3 MB in the tested runs) transfers with the job inputs.
 ROOT files and `cygno_out.log` go to the configured storage bucket/path; download them there separately from `cygno_htc -f`.
 Check for `Geometry mode: CAD v4` in the log and the requested event count in ROOT tree `tree1`.
 
@@ -124,4 +126,4 @@ python3 scripts/submit_jobs_lngs.py -m CYGNO04_camera_lens --tag CYGNO04_CameraL
 
 `-f` names a file in `backgrounds/` with columns Name, Z, A, NEvents (optionally IonicCharge and ExcitationEnergy[keV] before NEvents, for metastable states); `-n` is then ignored.
 Its name must start with a material key of `MATERIALS` in `config_lngs.py` or contain `Activity`; the prefix names the outputs.
-The template sets the source volume with `/gps/pos/confine`; `/gps/ion`, `/run/beamOn`, `/CYGNO/outfile` and `/random/setSeeds` are rewritten per job.
+The template sets the source volume with `/gps/pos/confine` (e.g. `camera_lens_L`, `cad_PMT_physical`); `/gps/ion`, `/run/beamOn`, `/CYGNO/outfile` and `/random/setSeeds` are rewritten per job. The `-k/--confine` option is parsed but not applied.
