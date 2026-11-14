@@ -114,6 +114,8 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_PEBase; 
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_PMMABox;
     std::shared_ptr<CADMesh::TessellatedMesh> mesh_GasBoundary;
+    std::shared_ptr<CADMesh::TessellatedMesh> mesh_PMT;
+    std::shared_ptr<CADMesh::TessellatedMesh> mesh_PMTSocket;
     
     //Building blocks: logic volumes, sizes and positions
     G4ThreeVector  tr_Tot;
@@ -172,6 +174,8 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     G4VSolid * cad_OuterShieldCu_solid;
     G4VSolid * cad_PEBase_solid;
     G4VSolid * cad_PMMABox_solid;
+    G4VSolid * cad_PMT_solid = nullptr;
+    G4VSolid * cad_PMTSocket_solid = nullptr;
    
     
     // Logical volumes
@@ -195,6 +199,8 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     G4LogicalVolume * cad_OuterShieldCu_logical;
     G4LogicalVolume * cad_PEBase_logical;
     G4LogicalVolume * cad_PMMABox_logical;
+    G4LogicalVolume * cad_PMT_logical = nullptr;
+    G4LogicalVolume * cad_PMTSocket_logical = nullptr;
     G4LogicalVolume * camera_log; 
     G4LogicalVolume * camera_lens_log; 
     G4LogicalVolume * camera_shield_log;
@@ -223,6 +229,8 @@ class CYGNODetectorConstruction : public G4VUserDetectorConstruction
     G4VPhysicalVolume * cad_OuterShieldCu_physical;
     G4VPhysicalVolume * cad_PEBase_physical;
     G4VPhysicalVolume * cad_PMMABox_physical;
+    G4VPhysicalVolume * cad_PMT_physical = nullptr;
+    G4VPhysicalVolume * cad_PMTSocket_physical = nullptr;
     G4VPhysicalVolume* camera_phys; 
     G4VPhysicalVolume* camera_lens_phys; 
     G4VPhysicalVolume* camera_shield_phys;

@@ -434,7 +434,7 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
       const std::vector<G4String> required = fUseV4Geometry
           ? std::vector<G4String>{"N66.stl", "FieldCage.stl", "GEM.stl",
               "Cu_radiopure.stl", "Cu_nonradiopure.stl", "PEBase.stl", "PMMA.stl",
-              "GasBoundary.stl"}
+              "GasBoundary.stl", "PMT.stl", "PMT_socket.stl"}
           : std::vector<G4String>{"FCSupport.stl", "GemFrame.stl", "FieldCage.stl",
               "GEM.stl", "InnerShieldCu.stl", "OuterShieldCu.stl", "PEBase.stl", "PMMABox.stl"};
       for (const auto& filename : required) {
@@ -465,6 +465,8 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
       mesh_PMMABox = loadMesh(fUseV4Geometry ? "PMMA.stl" : "PMMABox.stl");
       if (fUseV4Geometry) {
         mesh_GasBoundary = loadMesh("GasBoundary.stl");
+        mesh_PMT = loadMesh("PMT.stl");
+        mesh_PMTSocket = loadMesh("PMT_socket.stl");
       }
       G4cout << "Memory after loading CAD: " << GetMemoryUsageMB() << " MB" << G4endl;
     } else {
@@ -541,6 +543,21 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
       cad_PMMABox_solid = mesh_PMMABox->GetSolid();
       cad_PMMABox_logical = new G4LogicalVolume(cad_PMMABox_solid, CYGNOMaterials->Material("Perspex"), "cad_PMMABox_logical", 0, 0, 0);
       cad_PMMABox_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Perspex"));
+
+      if (fUseV4Geometry) {
+        // 16 PMTs and their sockets, each mesh holding all 16 bodies.
+        G4cout << "========== Warning ============" << G4endl;
+        G4cout << "PMT and PMT socket use placeholder materials (solid borosilicate glass, 2.23 g/cm3); verify their density and mass" << G4endl;
+        G4cout << "===============================" << G4endl;
+        cad_PMT_solid = mesh_PMT->GetSolid();
+        cad_PMT_logical = new G4LogicalVolume(cad_PMT_solid,
+            CYGNOMaterials->Material("PMT"), "cad_PMT_logical");
+        cad_PMT_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("PMT"));
+        cad_PMTSocket_solid = mesh_PMTSocket->GetSolid();
+        cad_PMTSocket_logical = new G4LogicalVolume(cad_PMTSocket_solid,
+            CYGNOMaterials->Material("PMTSocket"), "cad_PMTSocket_logical");
+        cad_PMTSocket_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("PMT"));
+      }
 
     }
   
@@ -700,6 +717,13 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
         	    cad_OuterShieldCu_logical,"cad_OuterShieldCu_physical", AirBox_log, false, 0, true);
       cad_PMMABox_physical = new G4PVPlacement(shield_transform,
         	    cad_PMMABox_logical,"cad_PMMABox_physical", AirBox_log, false, 0, true); 
+      if (fUseV4Geometry) {
+        // Same frame as the copper and PMMA; the PMT heads touch the PMMA windows.
+        cad_PMT_physical = new G4PVPlacement(new_cad_transform,
+            cad_PMT_logical, "cad_PMT_physical", AirBox_log, false, 0, true);
+        cad_PMTSocket_physical = new G4PVPlacement(new_cad_transform,
+            cad_PMTSocket_logical, "cad_PMTSocket_physical", AirBox_log, false, 0, true);
+      }
     }
     tr=G4ThreeVector(0.,0.,0.);
     //FIXME
@@ -860,6 +884,10 @@ void CYGNODetectorConstruction::SaveMassAndDensity()
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_OuterShieldCu_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_PEBase_logical);
     CYGNOProperties->AddVolumeNameMassAndDensity(cad_PMMABox_logical);
+    if (fUseV4Geometry) {
+      CYGNOProperties->AddVolumeNameMassAndDensity(cad_PMT_logical);
+      CYGNOProperties->AddVolumeNameMassAndDensity(cad_PMTSocket_logical);
+    }
   //  CYGNOProperties->AddVolumeNameMassAndDensity(cad_WaterShielding_logical);
   }
 
@@ -918,6 +946,8 @@ void CYGNODetectorConstruction::UpdateGeometry()
   cad_GEM_logical=0;
   cad_PEBase_logical=0;
   cad_PMMABox_logical=0;
+  cad_PMT_logical=nullptr;
+  cad_PMTSocket_logical=nullptr;
   
   TPC_log=0;
   CYGNO_log=0;

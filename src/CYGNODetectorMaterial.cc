@@ -110,6 +110,15 @@ void CYGNODetectorMaterial::ConstructMaterials(){
     //Camera = FindOrBuildMaterial("G4_Pyrex_Glass");
     Camera = FindOrBuildMaterial("G4_GLASS_PLATE");
 
+    // PMT (Hamamatsu R7378A) and socket (E678-14C): PLACEHOLDER materials.
+    // Both meshes are solid bodies; replace composition and density once the
+    // real masses are verified. Separate materials so each can be tuned.
+    //FIXME
+    PMTPlaceholder = new G4Material("PMT_placeholder", BSglass->GetDensity(), ncomponents=1);
+    PMTPlaceholder->AddMaterial(BSglass, fractionmass=1.);
+    PMTSocketPlaceholder = new G4Material("PMTSocket_placeholder", BSglass->GetDensity(), ncomponents=1);
+    PMTSocketPlaceholder->AddMaterial(BSglass, fractionmass=1.);
+
 
     
     //lngs rock material definition
@@ -227,6 +236,7 @@ void CYGNODetectorMaterial::ConstructMaterials(){
     VacuumVis = new G4VisAttributes(G4Color(1.,1.,0.4));
     CopperVis = new G4VisAttributes(G4Colour(1.,0.,0.));
     CameraVis = new G4VisAttributes(G4Colour(1.,0.,1.));
+    PMTVis = new G4VisAttributes(G4Colour(0.2,0.4,1.));
     PerspexVis = new G4VisAttributes(G4Colour(0.,1.,1.));
     CYGNOGasVis = new G4VisAttributes(G4Colour(0.,1.,0.));
     //CopperVis->SetForceWireframe(true);
@@ -283,6 +293,8 @@ G4Material* CYGNODetectorMaterial::Material(G4String what)
   if(what == "CYGNO_gas")         material = CYGNO_gas;
   if(what == "Perspex")           material = Perspex;
   if(what == "Camera")            material = Camera;
+  if(what == "PMT")               material = PMTPlaceholder;
+  if(what == "PMTSocket")         material = PMTSocketPlaceholder;
   if(what == "Kapton")            material = Kapton;
   if(what == "GEM")               material = GEM;
   if(what == "FieldCage")         material = FieldCage;
@@ -304,6 +316,7 @@ G4VisAttributes* CYGNODetectorMaterial::VisAttributes(G4String what)
   if(what == "LNGSRock")      vis = LNGSRockVis;
   if(what == "Concrete")      vis = ConcreteVis;
   if(what == "Camera")        vis = CameraVis;
+  if(what == "PMT")           vis = PMTVis;
   if(what == "CYGNO_gas")     vis = CYGNOGasVis;
   return vis;
 }
