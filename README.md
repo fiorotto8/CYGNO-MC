@@ -105,7 +105,7 @@ Basic PBS commands: <https://www.bo.infn.it/alice/introgrd/pbsabout/node17.html>
 Split 100M events into 100 jobs:
 
 ```sh
-python3 scripts/submit_jobs_lngs.py -m CYGNOtest_surface_gamma --tag ext_gamma -n 100000000 -e 1000000 --builddir ../CYGNO-MC-build/ --outdir ./
+python3 scripts/submit_jobs_lngs.py -m CYGNO04_camera_lens --tag camera_lens_K40 -n 100000000 -e 1000000 --builddir ../CYGNO-MC-build/ --outdir ./
 ```
 
 * `-m` macro template in `macro/`, without the `.mac` extension
