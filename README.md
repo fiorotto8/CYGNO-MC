@@ -31,7 +31,7 @@ The current CMake configuration forces Debug builds.
 ## Geometry
 
 Default: `../geometry/cygno04_v4_ASCII/`. Missing CAD uses the nominal analytic detector; incomplete CAD reports an error.
-v4 includes the 16 PMTs and sockets (`cad_PMT_physical`, `cad_PMTSocket_physical`); their materials are placeholders (solid borosilicate glass) until the real masses are known.
+v4 includes the 16 Hamamatsu R7378A PMTs and E2924-500 socket assemblies (`cad_PMT_physical`, `cad_PMTSocket_physical`): borosilicate glass at effective densities giving the measured masses, 16.9 g per PMT and 72.5 g per socket including its cables.
 Select legacy v3 with `CYGNO_GEOMETRY_PATH=../geometry/cygno_04_v3_ASCII ./CYGNO run.mac`.
 Isotope input examples are in `backgrounds/`.
 

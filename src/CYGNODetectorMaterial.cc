@@ -110,14 +110,16 @@ void CYGNODetectorMaterial::ConstructMaterials(){
     //Camera = FindOrBuildMaterial("G4_Pyrex_Glass");
     Camera = FindOrBuildMaterial("G4_GLASS_PLATE");
 
-    // PMT (Hamamatsu R7378A) and socket (E678-14C): PLACEHOLDER materials.
-    // Both meshes are solid bodies; replace composition and density once the
-    // real masses are verified. Separate materials so each can be tuned.
-    //FIXME
-    PMTPlaceholder = new G4Material("PMT_placeholder", BSglass->GetDensity(), ncomponents=1);
-    PMTPlaceholder->AddMaterial(BSglass, fractionmass=1.);
-    PMTSocketPlaceholder = new G4Material("PMTSocket_placeholder", BSglass->GetDensity(), ncomponents=1);
-    PMTSocketPlaceholder->AddMaterial(BSglass, fractionmass=1.);
+    // PMTs (Hamamatsu R7378A) and socket assemblies (E2924-500): borosilicate
+    // composition at the effective density that gives the measured mass to the
+    // solid v4 meshes (16 bodies each: PMT.stl 346.671 cm3, PMT_socket.stl
+    // 378.048 cm3). Weighed: 8 PMTs 135.3 g; 4 sockets with their 450 mm
+    // cables and connectors 290.13 g. The cables are not modelled, so their
+    // mass sits in the socket bodies. Recompute if either mesh changes.
+    PMTMaterial = new G4Material("PMT_R7378A_eff", 16*(135.3*g/8)/(346.671*cm3), ncomponents=1);
+    PMTMaterial->AddMaterial(BSglass, fractionmass=1.);
+    PMTSocketMaterial = new G4Material("PMTSocket_E2924-500_eff", 16*(290.13*g/4)/(378.048*cm3), ncomponents=1);
+    PMTSocketMaterial->AddMaterial(BSglass, fractionmass=1.);
 
 
     
@@ -293,8 +295,8 @@ G4Material* CYGNODetectorMaterial::Material(G4String what)
   if(what == "CYGNO_gas")         material = CYGNO_gas;
   if(what == "Perspex")           material = Perspex;
   if(what == "Camera")            material = Camera;
-  if(what == "PMT")               material = PMTPlaceholder;
-  if(what == "PMTSocket")         material = PMTSocketPlaceholder;
+  if(what == "PMT")               material = PMTMaterial;
+  if(what == "PMTSocket")         material = PMTSocketMaterial;
   if(what == "Kapton")            material = Kapton;
   if(what == "GEM")               material = GEM;
   if(what == "FieldCage")         material = FieldCage;

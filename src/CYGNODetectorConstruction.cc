@@ -545,10 +545,7 @@ G4VPhysicalVolume* CYGNODetectorConstruction::Construct()
       cad_PMMABox_logical->SetVisAttributes(CYGNOMaterials->VisAttributes("Perspex"));
 
       if (fUseV4Geometry) {
-        // 16 PMTs and their sockets, each mesh holding all 16 bodies.
-        G4cout << "========== Warning ============" << G4endl;
-        G4cout << "PMT and PMT socket use placeholder materials (solid borosilicate glass, 2.23 g/cm3); verify their density and mass" << G4endl;
-        G4cout << "===============================" << G4endl;
+        // 16 PMTs and their socket assemblies, each mesh holding all 16 bodies.
         cad_PMT_solid = mesh_PMT->GetSolid();
         cad_PMT_logical = new G4LogicalVolume(cad_PMT_solid,
             CYGNOMaterials->Material("PMT"), "cad_PMT_logical");
