@@ -110,19 +110,6 @@ void CYGNODetectorMaterial::ConstructMaterials(){
     //Camera = FindOrBuildMaterial("G4_Pyrex_Glass");
     Camera = FindOrBuildMaterial("G4_GLASS_PLATE");
 
-    // PMTs (Hamamatsu R7378A) and socket assemblies (E2924-500): borosilicate
-    // composition at the effective density that gives the measured mass to the
-    // solid v4 meshes (16 bodies each: PMT.stl 346.671 cm3, PMT_socket.stl
-    // 378.048 cm3). Weighed: 8 PMTs 135.3 g; 4 sockets with their 450 mm
-    // cables and connectors 290.13 g. The cables are not modelled, so their
-    // mass sits in the socket bodies. Recompute if either mesh changes.
-    PMTMaterial = new G4Material("PMT_R7378A_eff", 16*(135.3*g/8)/(346.671*cm3), ncomponents=1);
-    PMTMaterial->AddMaterial(BSglass, fractionmass=1.);
-    PMTSocketMaterial = new G4Material("PMTSocket_E2924-500_eff", 16*(290.13*g/4)/(378.048*cm3), ncomponents=1);
-    PMTSocketMaterial->AddMaterial(BSglass, fractionmass=1.);
-
-
-    
     //lngs rock material definition
     density = 2.71*g/cm3;
     lngsRock = new G4Material(name="LNGSRock",density,ncomponents=7);
@@ -141,6 +128,18 @@ void CYGNODetectorMaterial::ConstructMaterials(){
     Perspex->AddElement(elH, natoms=8);
     Perspex->AddElement(elC, natoms=5);
     Perspex->AddElement(elO, natoms=2);
+
+    // PMTs (Hamamatsu R7378A) and socket assemblies (E2924-500) at the effective
+    // densities that give the measured masses to the solid v4 meshes (16 bodies
+    // each: PMT.stl 346.671 cm3, PMT_socket.stl 378.048 cm3). Weighed: 8 PMTs
+    // 135.3 g; 4 sockets with their 450 mm cables and connectors 290.13 g.
+    // PMTs take the borosilicate composition; sockets (plastic housing and
+    // potting compound) take the acrylic one. The cables are not modelled, so
+    // their mass sits in the socket bodies. Recompute if either mesh changes.
+    PMTMaterial = new G4Material("PMT_R7378A_eff", 16*(135.3*g/8)/(346.671*cm3), ncomponents=1);
+    PMTMaterial->AddMaterial(BSglass, fractionmass=1.);
+    PMTSocketMaterial = new G4Material("PMTSocket_E2924-500_eff", 16*(290.13*g/4)/(378.048*cm3), ncomponents=1);
+    PMTSocketMaterial->AddMaterial(Perspex, fractionmass=1.);
 
     //Ceramic (for resistors)
     density = 3.7 * g/cm3;
