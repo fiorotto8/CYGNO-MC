@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.curdir))
 
 import BackgroundReader
 
-from config_lngs import MacrosList, NEvts, NEvtsPerJob, MaxNJobs, TAG, CODEDIR, OUTDIR, PBSOUTDIR, TMPDIR, MATERIALS, BUILDDIR
+from config_lngs import MacrosList, NEvts, NEvtsPerJob, MaxNJobs, TAG, CODEDIR, OUTDIR, PBSOUTDIR, TMPDIR, MATERIALS, BUILDDIR, GEOMETRYDIR
 
 #############################################################################################
 ## THE CODE BELOW SHOULD NOT BE TOUCHED. IF YOU FIND BUGS PLEASE EMAIL THE SIMULATION GROUP##
@@ -28,6 +28,7 @@ CODEDIR=%(CODEDIR)s
 WORKDIR=%(WORKDIR)s
 OUTDIR=%(OUTDIR)s
 BUILDDIR=%(BUILDDIR)s
+export CYGNO_GEOMETRY_PATH=%(GEOMETRYDIR)s
 PBSOUTDIR=%(PBSOUTDIR)s
 MACRONAME=%(MACRO)s
 TMPDIR=%(TMPDIR)s
@@ -72,6 +73,8 @@ def parseInputArgs():
     parser = optparse.OptionParser(description='Submission script configuration.')
     parser.add_option('-c', '--codedir', default=None,
                       help='Folder where the simulation code is stored')
+    parser.add_option('--geometrydir', default=None,
+                      help='CAD geometry folder passed to each job as CYGNO_GEOMETRY_PATH')
     parser.add_option('-b', '--builddir', default=None,
                       help='Folder where the compiled code is stored')
     parser.add_option('-o', '--outdir', default=None,
@@ -306,6 +309,7 @@ def SubmitJob(MACRO='RadioactiveDecayTEMPLATEOUT', TEMPLATE='RadioactiveDecayTEM
     kw['TMPDIR']=TMPDIR
 
     kw['BUILDDIR']=BUILDDIR
+    kw['GEOMETRYDIR']=GEOMETRYDIR
 
     script_filename = OUTDIR+'pbs_workdir/'+TAG+'/'+MACRO+Part+'.sh'
     log_filename = OUTDIR+'/pbs_logs/'+TAG+'/'+MACRO+Part+'.log'
@@ -346,6 +350,7 @@ def main():
     global PBSOUTDIR
     global TMPDIR
     global BUILDDIR
+    global GEOMETRYDIR
     #reading options
     options = parseInputArgs()
     if options.codedir:
@@ -367,6 +372,11 @@ def main():
         BUILDDIR=options.builddir
     if not os.path.isdir(BUILDDIR):
         print('ERROR: Build directory does not exist or is not found')
+        return
+    if options.geometrydir:
+        GEOMETRYDIR=options.geometrydir
+    if not os.path.isdir(GEOMETRYDIR):
+        print('ERROR: CAD geometry directory %s does not exist or is not found'%(GEOMETRYDIR))
         return
 
     if options.tmpdir:

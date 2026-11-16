@@ -82,7 +82,8 @@ First prepare one macro per job with the PBS script in debug mode, which writes 
 
 ```sh
 python3 scripts/submit_jobs_lngs.py -d -m CYGNO04_camera_lens -f CameraLensActivity.txt -e 100000 \
-  --tag CYGNO04_CameraLens --codedir . --builddir ../CYGNO-MC-build --outdir /path/to/work -t /path/to/work/tmp/
+  --tag CYGNO04_CameraLens --codedir . --builddir ../CYGNO-MC-build --geometrydir ../geometry/cygno04_v4_ASCII \
+  --outdir /path/to/work -t /path/to/work/tmp/
 ```
 
 Then submit one CNAF job per macro; each job folder gets the macro, `CYGNO`, the geometry archive and a `run_mc.sh`, and a filled copy of `subber.sh` is sourced from `Launch/`:
@@ -100,6 +101,7 @@ Submitted jobs are listed in `cnaf_jobs/submitted.txt` and skipped on reruns; af
 
 `scripts/submit_jobs_lngs.py` (Python 3) submits to the `cygno` PBS queue at LNGS; site paths are in `scripts/config_lngs.py` and the worker environment is set at the top of the script.
 Each job gets a copy of the macro template with its own event count, output name and random seeds (`/random/setSeeds`).
+Jobs run in a scratch directory, so the CAD geometry is passed as `CYGNO_GEOMETRY_PATH` from `GEOMETRYDIR` in `config_lngs.py` (default `geometry/cygno04_v4_ASCII/` next to `CYGNO-MC`) or `--geometrydir`.
 Basic PBS commands: <https://www.bo.infn.it/alice/introgrd/pbsabout/node17.html>
 
 Split 100M events into 100 jobs:
@@ -113,6 +115,7 @@ python3 scripts/submit_jobs_lngs.py -m CYGNO04_camera_lens --tag camera_lens_K40
 * `-e` events per job
 * `--tag` simulation tag; outputs go in a directory with this name
 * `--builddir` directory containing the `CYGNO` executable
+* `--geometrydir` CAD geometry directory (default `GEOMETRYDIR` in `config_lngs.py`)
 * `--outdir` output path
 
 Output is saved in `<outdir>/pbs_outputs/<tag>`; per-job logs and macro copies go in `pbs_logs/` and `pbs_workdir/`.

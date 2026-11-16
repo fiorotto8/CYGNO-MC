@@ -19,6 +19,7 @@ OUTDIR='/nfs/cygno/CYGNO-MC-data/' # this is the folder where results of the sim
 PBSOUTDIR='pbs_outputs/' #subfolder of OUTDIR where the ROOT output files of each TAG are saved
 TMPDIR='/nfs/scratch/'+username #this is a temporary directory where the simulation is compiled per each job. It is then cleaned up at the end of each job
 BUILDDIR='/users/'+username[0]+'/'+username+'/CYGNO/CYGNO-MC-build/'
+GEOMETRYDIR='/users/'+username[0]+'/'+username+'/CYGNO/geometry/cygno04_v4_ASCII/' # CAD geometry, passed to each job as CYGNO_GEOMETRY_PATH
 
 
 MATERIALS={'Pb':'G4_Pb', 'PE':'G4_POLYETHYLENE', 'Air':'G4_AIR', 'Rock':'LNGSRock', 'Cu':'G4_Cu', 'Steel':'G4_STAINLESS-STEEL', 'Teflon':'G4_TEFLON','Water':'Water','Acrylic':'Acrylic','CYGNO_gas':'CYGNO_gas'} #List of known materials. Used to give name to the outuput file and (obsolete) to identify shielding layers
