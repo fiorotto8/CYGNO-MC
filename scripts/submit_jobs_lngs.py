@@ -353,14 +353,13 @@ def main():
     global GEOMETRYDIR
     #reading options
     options = parseInputArgs()
+    # The job script runs in its own WORKDIR, so every path passed to it is absolute.
     if options.codedir:
         CODEDIR=options.codedir
-    if CODEDIR.endswith('/'):
-        CODEDIR=CODEDIR[:-1]
+    CODEDIR=os.path.abspath(CODEDIR)
     if options.outdir:
         OUTDIR=options.outdir
-    if not OUTDIR.endswith('/'):
-        OUTDIR=OUTDIR+'/'
+    OUTDIR=os.path.abspath(OUTDIR)+'/'
     if not os.path.isdir(CODEDIR):
         print('ERROR: Code directory does not exist or is not found')
         return
@@ -373,16 +372,17 @@ def main():
     if not os.path.isdir(BUILDDIR):
         print('ERROR: Build directory does not exist or is not found')
         return
+    BUILDDIR=os.path.abspath(BUILDDIR)+'/'
     if options.geometrydir:
         GEOMETRYDIR=options.geometrydir
     if not os.path.isdir(GEOMETRYDIR):
         print('ERROR: CAD geometry directory %s does not exist or is not found'%(GEOMETRYDIR))
         return
+    GEOMETRYDIR=os.path.abspath(GEOMETRYDIR)+'/'
 
     if options.tmpdir:
         TMPDIR=options.tmpdir
-    if not TMPDIR.endswith('/'):
-        TMPDIR=TMPDIR+'/'
+    TMPDIR=os.path.abspath(TMPDIR)+'/'
     if options.tag:
         TAG=options.tag
     if options.nevtsperjob:
