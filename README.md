@@ -72,7 +72,7 @@ cygno_htc -q
 cygno_htc -f JOBID CEID
 ```
 
-The compressed v4 geometry (about 6.1 MB; 4.3 MB in the tested runs) transfers with the job inputs.
+The compressed v4 geometry (about 7 MB; 4.3 MB in the tested runs) transfers with the job inputs.
 ROOT files and `cygno_out.log` go to the configured storage bucket/path; download them there separately from `cygno_htc -f`.
 Check for `Geometry mode: CAD v4` in the log and the requested event count in ROOT tree `tree1`.
 
